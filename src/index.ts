@@ -41,17 +41,27 @@ const genErrorPayload = (error: Error) => {
 
 const sendNotification = async (
   payload: { content: string | null; embeds: { title: string; description: string; color: number }[] },
-  env: Env
+  env: Env,
+  retries: number = 0
 ) => {
-  const response = await fetch(env.DISCORD_WEBHOOK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) {
-    throw new Error("No se pudo enviar la notificación");
+  try {
+    const response = await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      throw new Error("No se pudo enviar la notificación");
+    }
+  } catch (error) {
+    if (retries < 2) {
+      console.log(`Reintentando envío de notificación (${retries + 1}/2)`);
+      await sendNotification(payload, env, retries + 1);
+    } else {
+      console.error("Error al enviar notificación:", error);
+    }
   }
 };
 
