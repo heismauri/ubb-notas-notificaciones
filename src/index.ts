@@ -39,7 +39,7 @@ const getMarksCount = (marksResponse: MarksResponse) => {
 };
 
 const getCourseMessage = (course: Course) => {
-  return `El ramo **"${course.name}"** (${course.code}) acaba de subir nuevas notas`;
+  return `El ramo **"${course.name}"** (${course.code}) subió una nueva nota`;
 };
 
 const genPayload = (messages: string[]) => {
@@ -94,6 +94,7 @@ const handleFetch = async (env: Env) => {
   await Promise.all(
     courses.map(async (course) => {
       const response = await fetchMarks(course, env);
+      console.log(response);
       const marksCount = getMarksCount(response);
       if ((course.marksCount || 0) < marksCount) {
         course.marksCount = marksCount;
@@ -105,7 +106,7 @@ const handleFetch = async (env: Env) => {
     const payload = genPayload(newMarkMessages);
     await sendNotification(env, payload);
   }
-  return new Response(JSON.stringify({ success: true }), { status: 200 });
+  return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
 };
 
 export default {
@@ -115,7 +116,7 @@ export default {
     } catch (error) {
       const payload = genErrorPayload(error as Error);
       await sendNotification(env, payload);
-      return new Response(JSON.stringify({ error }), { status: 500 });
+      return new Response(JSON.stringify({ error }), { status: 422 });
     }
   }
 } satisfies ExportedHandler<Env>;
