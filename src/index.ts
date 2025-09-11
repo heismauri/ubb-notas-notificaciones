@@ -35,6 +35,13 @@ const fetchMarks = async (
   return response.json();
 };
 
+const getMarksCount = (marksResponse: MarksResponse) => {
+  return marksResponse.calificaciones.flatMap((calificacion) => {
+    const subgrades = calificacion.subcal || [];
+    return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)].filter((mark) => mark !== "");
+  }).length;
+};
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		return new Response('Hello World!');
