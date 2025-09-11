@@ -9,18 +9,17 @@ const getCourseName = (code: string): string => {
 
 const fetchMarks = async (
 	{
-		run,
 		code,
 		semester,
 		year,
 		section,
 		other,
 		modular = false,
-	}: { run: string; code: string; semester: string; year: string; section: string; other: string; modular?: boolean },
+  }: { code: string; semester: string; year: string; section: string; other: string; modular?: boolean },
 	env: Env
 ): Promise<MarksResponse> => {
 	const endpoint = modular ? env.MODULAR_MARKS_ENDPOINT : env.MARKS_ENDPOINT;
-	const response = await fetch(`${endpoint}/${run}/${code}/${semester}/${year}/${section}/${other}`, {
+  const response = await fetch(`${endpoint}/${env.RUN}/${code}/${section}/${year}/${semester}/${other}`, {
 		headers: {
       Accept: "*/*",
       "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
