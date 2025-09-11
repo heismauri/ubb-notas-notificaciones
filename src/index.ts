@@ -1,13 +1,6 @@
 import type { Course } from "@/types/Course";
 import type { MarksResponse } from "@/types/MarksResponse";
 
-const getCourseName = (code: string): string => {
-  switch (code) {
-    default:
-      return "Nombre de asignatura desconocida";
-  }
-};
-
 const fetchMarks = async (
   {
     code,
@@ -19,19 +12,21 @@ const fetchMarks = async (
   }: { code: string; semester: string; year: string; section: string; other: string; modular?: boolean },
   env: Env
 ): Promise<MarksResponse> => {
-  const endpoint = modular ? env.MODULAR_MARKS_ENDPOINT : env.MARKS_ENDPOINT;
-  const response = await fetch(`${endpoint}/${env.RUN}/${code}/${section}/${year}/${semester}/${other}`, {
-    headers: {
-      Accept: "*/*",
-      "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-      "Accept-Language": "en-US,en;q=0.9",
-      Authorization: `Bearer ${env.TOKEN}`,
-      Pragma: "no-cache",
-      "Cache-Control": "no-cache"
+  const response = await fetch(
+    `${env.MARKS_ENDPOINT}${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}/${year}/${semester}/${other}`,
+    {
+      headers: {
+        Accept: "*/*",
+        "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
+        "Accept-Language": "en-US,en;q=0.9",
+        Authorization: `Bearer ${env.TOKEN}`,
+        Pragma: "no-cache",
+        "Cache-Control": "no-cache"
+      }
     }
-  });
+  );
   if (!response.ok) {
-    throw new Error("Failed to fetch marks");
+    throw new Error("No se pudieron obtener las notas");
   }
   return response.json();
 };
@@ -44,8 +39,7 @@ const getMarksCount = (marksResponse: MarksResponse) => {
 };
 
 const getCourseMessage = (course: Course) => {
-  const courseName = getCourseName(course.code);
-  return `El ramo **"${courseName}"** (${course.code}) acaba de subir nuevas notas`;
+  return `El ramo **"${course.name}"** (${course.code}) acaba de subir nuevas notas`;
 };
 
 const genPayload = (messages: string[]) => {
@@ -56,6 +50,19 @@ const genPayload = (messages: string[]) => {
         title: "¡Nuevas notas disponibles!",
         description: messages.join("\n"),
         color: 84120
+      }
+    ]
+  };
+};
+
+const genErrorPayload = (error: Error) => {
+  return {
+    content: null,
+    embeds: [
+      {
+        title: "Error al obtener notas",
+        description: error.message,
+        color: 16711680
       }
     ]
   };
@@ -73,13 +80,16 @@ const sendNotification = async (
     body: JSON.stringify(payload)
   });
   if (!response.ok) {
-    throw new Error("Failed to send notification");
+    throw new Error("No se pudo enviar la notificación");
   }
 };
 
 const handleFetch = async (env: Env) => {
   const coursesKV = await env.ubbnotas.get("courses");
   const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
+  if (courses.length === 0) {
+    throw new Error("No se encontraron cursos");
+  }
   const newMarkMessages: string[] = [];
   await Promise.all(
     courses.map(async (course) => {
@@ -103,6 +113,8 @@ export default {
     try {
       return handleFetch(env);
     } catch (error) {
+      const payload = genErrorPayload(error as Error);
+      await sendNotification(env, payload);
       return new Response(JSON.stringify({ error }), { status: 500 });
     }
   }
