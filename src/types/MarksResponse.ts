@@ -6,4 +6,5 @@ export interface Calificaciones {
 	nombre: string;
 	factor: number;
 	nota: string;
+  subcal?: Calificaciones[];
 }
