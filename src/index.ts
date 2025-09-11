@@ -1,9 +1,9 @@
-import type { MarksResponse } from '@/types/MarksResponse';
+import type { MarksResponse } from "@/types/MarksResponse";
 
 const getCourseName = (code: string): string => {
 	switch (code) {
 		default:
-			return 'Nombre de asignatura desconocida';
+      return "Nombre de asignatura desconocida";
 	}
 };
 
@@ -22,16 +22,16 @@ const fetchMarks = async (
 	const endpoint = modular ? env.MODULAR_MARKS_ENDPOINT : env.MARKS_ENDPOINT;
 	const response = await fetch(`${endpoint}/${run}/${code}/${semester}/${year}/${section}/${other}`, {
 		headers: {
-			Accept: '*/*',
-			'User-Agent': 'YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0',
-			'Accept-Language': 'en-US,en;q=0.9',
+      Accept: "*/*",
+      "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
+      "Accept-Language": "en-US,en;q=0.9",
 			Authorization: `Bearer ${env.TOKEN}`,
-			Pragma: 'no-cache',
-			'Cache-Control': 'no-cache',
+      Pragma: "no-cache",
+      "Cache-Control": "no-cache",
 		},
 	});
 	if (!response.ok) {
-		throw new Error('Failed to fetch marks');
+    throw new Error("Failed to fetch marks");
 	}
 	return response.json();
 };
