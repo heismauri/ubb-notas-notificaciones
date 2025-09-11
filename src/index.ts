@@ -1,37 +1,6 @@
+import { getCalificaciones } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
 import type { Calificaciones } from "@/types/UBioBioResponses";
-
-const fetchMarks = async (
-  {
-    code,
-    section,
-    year,
-    semester,
-    other,
-    modular = false
-  }: { code: number; section: number; year: number; semester: number; other?: string; modular?: boolean },
-  env: Env
-): Promise<Calificaciones> => {
-  const response = await fetch(
-    `${env.BASE_URL}/get_calificaciones${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}/${year}/${semester}${
-      other ? `/${other}` : ""
-    }`,
-    {
-      headers: {
-        Accept: "*/*",
-        "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-        "Accept-Language": "en-US,en;q=0.9",
-        Authorization: `Bearer ${env.TOKEN}`,
-        Pragma: "no-cache",
-        "Cache-Control": "no-cache"
-      }
-    }
-  );
-  if (!response.ok) {
-    throw new Error("No se pudieron obtener las notas");
-  }
-  return response.json();
-};
 
 const getMarksCount = (marksResponse: Calificaciones) => {
   return marksResponse.calificaciones.flatMap((calificacion) => {
@@ -95,7 +64,7 @@ const handleFetch = async (env: Env, enableNotifications: boolean = true) => {
   const newMarkMessages: string[] = [];
   await Promise.all(
     courses.map(async (course) => {
-      const response = await fetchMarks(course, env);
+      const response = await getCalificaciones(course, env);
       const marksCount = getMarksCount(response);
       if ((course.marksCount || 0) < marksCount) {
         course.marksCount = marksCount;
