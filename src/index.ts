@@ -15,7 +15,7 @@ const fetchMarks = async (
     year,
     section,
     other,
-    modular = false,
+    modular = false
   }: { code: string; semester: string; year: string; section: string; other: string; modular?: boolean },
   env: Env
 ): Promise<MarksResponse> => {
@@ -27,8 +27,8 @@ const fetchMarks = async (
       "Accept-Language": "en-US,en;q=0.9",
       Authorization: `Bearer ${env.TOKEN}`,
       Pragma: "no-cache",
-      "Cache-Control": "no-cache",
-    },
+      "Cache-Control": "no-cache"
+    }
   });
   if (!response.ok) {
     throw new Error("Failed to fetch marks");
@@ -55,8 +55,8 @@ const genPayload = (messages: string[]) => {
       {
         title: "¡Nuevas notas disponibles!",
         description: messages.join("\n"),
-        color: 84120,
-      },
+        color: 84120
+      }
     ]
   };
 };
@@ -68,9 +68,9 @@ const sendNotification = async (
   const response = await fetch(env.DISCORD_WEBHOOK_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   });
   if (!response.ok) {
     throw new Error("Failed to send notification");
@@ -79,24 +79,24 @@ const sendNotification = async (
 
 const handleFetch = async (env: Env) => {
   const coursesKV = await env.ubbnotas.get("courses");
-      const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
-      const newMarkMessages: string[] = [];
-      await Promise.all(
-        courses.map(async (course) => {
-          const response = await fetchMarks(course, env);
-          const marksCount = getMarksCount(response);
-          if ((course.marksCount || 0) < marksCount) {
-            course.marksCount = marksCount;
-            newMarkMessages.push(getCourseMessage(course));
-          }
-        })
-      );
-      if (newMarkMessages.length > 0) {
-        const payload = genPayload(newMarkMessages);
-        await sendNotification(env, payload);
+  const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
+  const newMarkMessages: string[] = [];
+  await Promise.all(
+    courses.map(async (course) => {
+      const response = await fetchMarks(course, env);
+      const marksCount = getMarksCount(response);
+      if ((course.marksCount || 0) < marksCount) {
+        course.marksCount = marksCount;
+        newMarkMessages.push(getCourseMessage(course));
       }
-      return new Response(JSON.stringify({ success: true }), { status: 200 });
-}
+    })
+  );
+  if (newMarkMessages.length > 0) {
+    const payload = genPayload(newMarkMessages);
+    await sendNotification(env, payload);
+  }
+  return new Response(JSON.stringify({ success: true }), { status: 200 });
+};
 
 export default {
   async fetch(_, env): Promise<Response> {
@@ -105,5 +105,5 @@ export default {
     } catch (error) {
       return new Response(JSON.stringify({ error }), { status: 500 });
     }
-  },
+  }
 } satisfies ExportedHandler<Env>;
