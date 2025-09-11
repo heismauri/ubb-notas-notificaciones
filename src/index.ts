@@ -106,17 +106,28 @@ const handleFetch = async (env: Env) => {
     const payload = genPayload(newMarkMessages);
     await sendNotification(env, payload);
   }
-  return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
+  return newMarkMessages;
 };
 
 export default {
   async fetch(_, env): Promise<Response> {
     try {
-      return handleFetch(env);
+      const newMarkMessages = await handleFetch(env);
+      return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
     } catch (error) {
       const payload = genErrorPayload(error as Error);
       await sendNotification(env, payload);
       return new Response(JSON.stringify({ error }), { status: 422 });
+    }
+  },
+  async scheduled(_, env) {
+    try {
+      await handleFetch(env);
+      return;
+    } catch (error) {
+      const payload = genErrorPayload(error as Error);
+      await sendNotification(env, payload);
+      return;
     }
   }
 } satisfies ExportedHandler<Env>;
