@@ -105,6 +105,7 @@ const handleFetch = async (env: Env) => {
   if (newMarkMessages.length > 0) {
     const payload = genPayload(newMarkMessages);
     await sendNotification(env, payload);
+    await env.ubbnotas.put("courses", JSON.stringify(courses));
   }
   return newMarkMessages;
 };
