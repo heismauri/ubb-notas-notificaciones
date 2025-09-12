@@ -1,10 +1,10 @@
 export interface Course {
   name: string;
-  code: string;
-  semester: string;
-  year: string;
-  section: string;
-  other: string;
+  code: number;
+  section: number;
+  year: number;
+  semester: number;
   modular: boolean;
+  other?: string;
   marksCount?: number;
 }

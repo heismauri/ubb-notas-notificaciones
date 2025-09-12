@@ -1,19 +1,21 @@
 import type { Course } from "@/types/Course";
-import type { MarksResponse } from "@/types/MarksResponse";
+import type { Calificaciones } from "@/types/UBioBioResponses";
 
 const fetchMarks = async (
   {
     code,
-    semester,
-    year,
     section,
+    year,
+    semester,
     other,
     modular = false
-  }: { code: string; semester: string; year: string; section: string; other: string; modular?: boolean },
+  }: { code: number; section: number; year: number; semester: number; other?: string; modular?: boolean },
   env: Env
-): Promise<MarksResponse> => {
+): Promise<Calificaciones> => {
   const response = await fetch(
-    `${env.MARKS_ENDPOINT}${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}/${year}/${semester}/${other}`,
+    `${env.BASE_URL}/get_calificaciones${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}/${year}/${semester}${
+      other ? `/${other}` : ""
+    }`,
     {
       headers: {
         Accept: "*/*",
@@ -31,7 +33,7 @@ const fetchMarks = async (
   return response.json();
 };
 
-const getMarksCount = (marksResponse: MarksResponse) => {
+const getMarksCount = (marksResponse: Calificaciones) => {
   return marksResponse.calificaciones.flatMap((calificacion) => {
     const subgrades = calificacion.subcal || [];
     return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)].filter((mark) => mark !== "");
@@ -69,8 +71,8 @@ const genErrorPayload = (error: Error) => {
 };
 
 const sendNotification = async (
-  env: Env,
-  payload: { content: string | null; embeds: { title: string; description: string; color: number }[] }
+  payload: { content: string | null; embeds: { title: string; description: string; color: number }[] },
+  env: Env
 ) => {
   const response = await fetch(env.DISCORD_WEBHOOK_URL, {
     method: "POST",
@@ -84,7 +86,7 @@ const sendNotification = async (
   }
 };
 
-const handleFetch = async (env: Env) => {
+const handleFetch = async (env: Env, enableNotifications: boolean = true) => {
   const coursesKV = await env.ubbnotas.get("courses");
   const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
   if (courses.length === 0) {
@@ -94,7 +96,6 @@ const handleFetch = async (env: Env) => {
   await Promise.all(
     courses.map(async (course) => {
       const response = await fetchMarks(course, env);
-      console.log(response);
       const marksCount = getMarksCount(response);
       if ((course.marksCount || 0) < marksCount) {
         course.marksCount = marksCount;
@@ -103,8 +104,10 @@ const handleFetch = async (env: Env) => {
     })
   );
   if (newMarkMessages.length > 0) {
-    const payload = genPayload(newMarkMessages);
-    await sendNotification(env, payload);
+    if (enableNotifications) {
+      const payload = genPayload(newMarkMessages);
+      await sendNotification(payload, env);
+    }
     await env.ubbnotas.put("courses", JSON.stringify(courses));
   }
   return newMarkMessages;
@@ -113,11 +116,11 @@ const handleFetch = async (env: Env) => {
 export default {
   async fetch(_, env): Promise<Response> {
     try {
-      const newMarkMessages = await handleFetch(env);
+      const newMarkMessages = await handleFetch(env, false);
       return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
     } catch (error) {
       const payload = genErrorPayload(error as Error);
-      await sendNotification(env, payload);
+      console.error(error);
       return new Response(JSON.stringify({ error }), { status: 422 });
     }
   },
@@ -127,7 +130,7 @@ export default {
       return;
     } catch (error) {
       const payload = genErrorPayload(error as Error);
-      await sendNotification(env, payload);
+      await sendNotification(payload, env);
       return;
     }
   }
