@@ -39,7 +39,7 @@ const genErrorPayload = (error: Error) => {
   };
 };
 
-const sendNotification = async (
+const sendDiscordNotification = async (
   payload: { content: string | null; embeds: { title: string; description: string; color: number }[] },
   env: Env
 ) => {
@@ -80,7 +80,7 @@ const handleFetch = async (env: Env, enableNotifications: boolean = true) => {
   if (newMarkMessages.length > 0) {
     if (enableNotifications) {
       const payload = genPayload(newMarkMessages);
-      await sendNotification(payload, env);
+      await sendDiscordNotification(payload, env);
     }
     await env.ubbnotas.put("courses", JSON.stringify(courses));
   } else {
@@ -107,7 +107,7 @@ export default {
       return;
     } catch (error) {
       const payload = genErrorPayload(error as Error);
-      await sendNotification(payload, env);
+      await sendDiscordNotification(payload, env);
       return;
     }
   }
