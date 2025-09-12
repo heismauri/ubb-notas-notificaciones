@@ -10,6 +10,7 @@
     }
   ],
   "main": "src/index.ts",
+  "minify": true,
   "name": "ubb-notas-notificaciones",
   "observability": {
     "enabled": true
@@ -20,8 +21,8 @@
   "triggers": {
     "crons": [
       // Chile Summer Time
-      "0 10-23 * 3-12 *",
-      "0 0-3 * 3-12 *"
+      "*/30 10-23 * 3-12 *",
+      "*/30 0-3 * 3-12 *"
     ]
   }
 }
