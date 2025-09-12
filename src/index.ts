@@ -41,8 +41,7 @@ const genErrorPayload = (error: Error) => {
 
 const sendNotification = async (
   payload: { content: string | null; embeds: { title: string; description: string; color: number }[] },
-  env: Env,
-  retries: number = 0
+  env: Env
 ) => {
   try {
     const response = await fetch(env.DISCORD_WEBHOOK_URL, {
@@ -53,15 +52,11 @@ const sendNotification = async (
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
-      throw new Error("No se pudo enviar la notificación");
+      throw new Error(`No se pudo enviar la notificación: ${response.status}`);
     }
   } catch (error) {
-    if (retries < 2) {
-      console.log(`Reintentando envío de notificación (${retries + 1}/2)`);
-      await sendNotification(payload, env, retries + 1);
-    } else {
-      console.error("Error al enviar notificación:", error);
-    }
+    console.error("Error al enviar notificación:", error);
+    throw error;
   }
 };
 
@@ -88,14 +83,17 @@ const handleFetch = async (env: Env, enableNotifications: boolean = true) => {
       await sendNotification(payload, env);
     }
     await env.ubbnotas.put("courses", JSON.stringify(courses));
+  } else {
+    console.log("No hay nuevas notas");
   }
   return newMarkMessages;
 };
 
 export default {
-  async fetch(_, env): Promise<Response> {
+  async fetch(request, env): Promise<Response> {
     try {
-      const newMarkMessages = await handleFetch(env, false);
+      const enableNotifications = new URL(request.url).searchParams.get("notify") === "true";
+      const newMarkMessages = await handleFetch(env, enableNotifications);
       return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
     } catch (error) {
       const payload = genErrorPayload(error as Error);
