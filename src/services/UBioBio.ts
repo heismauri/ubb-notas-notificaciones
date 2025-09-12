@@ -22,11 +22,11 @@ const getAsignaturas = async (
     `${env.BASE_URL}/get_asignaturas/${env.RUN}/${careerCode}/${pcaCode}/${admissionYear}/${admissionSemester}/${year}/${semester}`,
     {
       headers: {
-        Accept: "*/*",
+        "Accept": "*/*",
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
         "Accept-Language": "en-US,en;q=0.9",
-        Authorization: `Bearer ${env.TOKEN}`,
-        Pragma: "no-cache",
+        "Authorization": `Bearer ${env.TOKEN}`,
+        "Pragma": "no-cache",
         "Cache-Control": "no-cache"
       }
     }
@@ -54,11 +54,11 @@ const getCalificaciones = async (
     }`,
     {
       headers: {
-        Accept: "*/*",
+        "Accept": "*/*",
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
         "Accept-Language": "en-US,en;q=0.9",
-        Authorization: `Bearer ${env.TOKEN}`,
-        Pragma: "no-cache",
+        "Authorization": `Bearer ${env.TOKEN}`,
+        "Pragma": "no-cache",
         "Cache-Control": "no-cache"
       }
     }
@@ -85,11 +85,11 @@ const getModulos = async (
 ) => {
   const response = await fetch(`${env.BASE_URL}/get_modulos/${env.RUN}/${code}/${section}/${year}/${semester}`, {
     headers: {
-      Accept: "*/*",
+      "Accept": "*/*",
       "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
       "Accept-Language": "en-US,en;q=0.9",
-      Authorization: `Bearer ${env.TOKEN}`,
-      Pragma: "no-cache",
+      "Authorization": `Bearer ${env.TOKEN}`,
+      "Pragma": "no-cache",
       "Cache-Control": "no-cache"
     }
   });
