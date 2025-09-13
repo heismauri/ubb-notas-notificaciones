@@ -69,7 +69,7 @@ const getModulos = async (
   },
   env: Env
 ): Promise<Modulo[]> => {
-  const response = await fetch(`${env.BASE_URL}/get_modulos/${env.RUN}/${code}/${section}/${year}/${semester}`, {
+  const response = await fetch(`${env.BASE_URL}/get_modulos/${code}/${section}/${year}/${semester}`, {
     headers: {
       "Accept": "*/*",
       "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
