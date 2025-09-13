@@ -65,8 +65,9 @@ const refreshCourses = async (url: URL, env: Env) => {
       marksCount: 0
     };
   });
+  const indicesToRemove: number[] = [];
   await Promise.all(
-    courses.map(async (course) => {
+    courses.map(async (course, idx) => {
       if (course.modular) {
         const modulos = await getModulos(course, env);
         if (modulos.length > 0) {
@@ -83,13 +84,14 @@ const refreshCourses = async (url: URL, env: Env) => {
               marksCount: 0
             });
           });
-          courses.splice(courses.indexOf(course), 1);
+          indicesToRemove.push(idx);
         } else {
-          throw new Error(`No se encontraron módulos para la asignatura modular ${course.name}`);
+          throw new Error(`No se encontraron módulos para la asignatura modular: ${course.name}`);
         }
       }
     })
   );
+  indicesToRemove.sort((a, b) => b - a).forEach(idx => courses.splice(idx, 1));
   courses.sort((a, b) => b.code - a.code);
   await Promise.all(
     courses.map(async (course) => {
