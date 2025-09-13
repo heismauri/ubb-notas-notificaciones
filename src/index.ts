@@ -53,10 +53,16 @@ const checkAndNotifyNewMarks = async (env: Env, enableNotifications: boolean = t
 };
 
 export default {
-  async fetch(_, env) {
+  async fetch(request, env) {
     try {
-      const newMarkMessages = await checkAndNotifyNewMarks(env, false);
-      return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
+      const url = new URL(request.url);
+      switch (url.pathname) {
+        case "/":
+          const newMarkMessages = await checkAndNotifyNewMarks(env, true);
+          return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
+        default:
+          return new Response(JSON.stringify({ error: "No encontrado" }), { status: 404 });
+      }
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
