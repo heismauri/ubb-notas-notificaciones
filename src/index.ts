@@ -60,7 +60,7 @@ const sendDiscordNotification = async (
   }
 };
 
-const handleFetch = async (env: Env, enableNotifications: boolean = true) => {
+const checkAndNotifyNewMarks = async (env: Env, enableNotifications: boolean = true) => {
   const coursesKV = await env.ubbnotas.get("courses");
   const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
   if (courses.length === 0) {
@@ -90,20 +90,19 @@ const handleFetch = async (env: Env, enableNotifications: boolean = true) => {
 };
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(_, env) {
     try {
-      const enableNotifications = new URL(request.url).searchParams.get("notify") === "true";
-      const newMarkMessages = await handleFetch(env, enableNotifications);
+      const newMarkMessages = await checkAndNotifyNewMarks(env, false);
       return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
     } catch (error) {
-      const payload = genErrorPayload(error as Error);
       console.error(error);
-      return new Response(JSON.stringify({ error }), { status: 422 });
+      const errorMessage = (error instanceof Error) ? error.message : "Error desconocido";
+      return new Response(JSON.stringify({ error: errorMessage }), { status: 422 });
     }
   },
   async scheduled(_, env) {
     try {
-      await handleFetch(env);
+      await checkAndNotifyNewMarks(env);
       return;
     } catch (error) {
       const payload = genErrorPayload(error as Error);
