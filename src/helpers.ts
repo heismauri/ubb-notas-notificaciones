@@ -12,6 +12,14 @@ const getCourseMessage = (course: Course) => {
   return `El ramo **"${course.name}"** (${course.code}) subió una nueva nota`;
 };
 
+const getCurrentSemester = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const semester = month >= 8 ? 2 : 1;
+  return semester;
+}
+
 const genPayload = (messages: string[]) => {
   return {
     content: null,
@@ -38,4 +46,4 @@ const genErrorPayload = (error: Error) => {
   };
 };
 
-export { getMarksCount, getCourseMessage, genPayload, genErrorPayload };
+export { genErrorPayload, genPayload, getCourseMessage, getCurrentSemester, getMarksCount };

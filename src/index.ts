@@ -1,5 +1,5 @@
-import { genErrorPayload, genPayload, getCourseMessage, getMarksCount } from "@/helpers";
-import { getCalificaciones } from "@/services/UBioBio";
+import { genErrorPayload, genPayload, getCourseMessage, getCurrentSemester, getMarksCount } from "@/helpers";
+import { getAsignaturas, getCalificaciones, getModulos } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 
@@ -24,7 +24,7 @@ const sendDiscordNotification = async (payload: DiscordWebhookPayload, env: Env)
   throw new Error(`No se pudo enviar la notificación: ${response.status}`);
 };
 
-const checkAndNotifyNewMarks = async (env: Env, enableNotifications: boolean = true) => {
+const checkAndNotifyNewMarks = async (env: Env) => {
   const coursesKV = await env.DATA.get("courses");
   const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
   if (courses.length === 0) {
@@ -33,8 +33,8 @@ const checkAndNotifyNewMarks = async (env: Env, enableNotifications: boolean = t
   const newMarkMessages: string[] = [];
   await Promise.all(
     courses.map(async (course) => {
-      const response = await getCalificaciones(course, env);
-      const marksCount = getMarksCount(response);
+      const calificaciones = await getCalificaciones(course, env);
+      const marksCount = getMarksCount(calificaciones);
       if ((course.marksCount || 0) < marksCount) {
         course.marksCount = marksCount;
         newMarkMessages.push(getCourseMessage(course));
@@ -42,14 +42,62 @@ const checkAndNotifyNewMarks = async (env: Env, enableNotifications: boolean = t
     })
   );
   if (newMarkMessages.length > 0) {
-    if (enableNotifications) {
-      await env.NOTIFICATIONS.send(newMarkMessages);
-    }
+    await env.NOTIFICATIONS.send(newMarkMessages);
     await env.DATA.put("courses", JSON.stringify(courses));
   } else {
     console.log("No hay nuevas notas");
   }
   return newMarkMessages;
+};
+
+const refreshCourses = async (url: URL, env: Env) => {
+  const year = parseInt(url.searchParams.get("year") || "") || new Date().getFullYear();
+  const semester = parseInt(url.searchParams.get("semester") || "") || getCurrentSemester();
+  const asignaturas = await getAsignaturas({ year, semester }, env);
+  const courses: Course[] = asignaturas.map((a) => {
+    return {
+      name: a.agn_nombre,
+      code: a.agn_codigo,
+      section: a.mla_sec_numero,
+      modular: a.sec_ind_modular !== 0,
+      year,
+      semester,
+      marksCount: 0
+    };
+  });
+  await Promise.all(
+    courses.map(async (course) => {
+      if (course.modular) {
+        const modulos = await getModulos(course, env);
+        if (modulos.length > 0) {
+          modulos.map((mod) => {
+            const other = `${env.CARRER_CODE}/${env.PCA_CODE}/${mod.mod_numero}/${mod.ddo_correlativo}`;
+            courses.push({
+              name: `${course.name} - ${mod.mod_nombre}${mod.ddo_correlativo === 2 ? "R" : ""}`,
+              code: course.code,
+              section: course.section,
+              year: course.year,
+              semester: course.semester,
+              modular: course.modular,
+              other,
+              marksCount: 0
+            });
+          });
+          courses.splice(courses.indexOf(course), 1);
+        } else {
+          throw new Error(`No se encontraron módulos para la asignatura modular ${course.name}`);
+        }
+      }
+    })
+  );
+  courses.sort((a, b) => b.code - a.code);
+  await Promise.all(
+    courses.map(async (course) => {
+      const calificaciones = await getCalificaciones(course, env);
+      course.marksCount = getMarksCount(calificaciones);
+    })
+  );
+  await env.DATA.put("courses", JSON.stringify(courses));
 };
 
 export default {
@@ -58,15 +106,15 @@ export default {
       const url = new URL(request.url);
       switch (url.pathname) {
         case "/":
-          const newMarkMessages = await checkAndNotifyNewMarks(env, true);
-          return new Response(JSON.stringify({ success: true, newMarkMessages }), { status: 200 });
+          await refreshCourses(url, env);
+          return new Response(JSON.stringify({ success: true, message: "Cursos actualizados" }), { status: 200 });
         default:
-          return new Response(JSON.stringify({ error: "No encontrado" }), { status: 404 });
+          return new Response(JSON.stringify({ success: false, message: "No encontrado" }), { status: 404 });
       }
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      return new Response(JSON.stringify({ error: errorMessage }), { status: 422 });
+      return new Response(JSON.stringify({ success: false, message: errorMessage }), { status: 422 });
     }
   },
   async scheduled(_, env) {
