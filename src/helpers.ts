@@ -13,11 +13,8 @@ const getCourseMessage = (course: Course) => {
 };
 
 const getCurrentSemester = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const semester = month >= 8 ? 2 : 1;
-  return semester;
+  const month = new Date().getMonth();
+  return month >= 7 ? 2 : 1;
 }
 
 const genPayload = (messages: string[]) => {

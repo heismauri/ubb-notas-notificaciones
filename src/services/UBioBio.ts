@@ -5,7 +5,8 @@ const getAsignaturas = async (
   env: Env
 ): Promise<Asignatura[]> => {
   const response = await fetch(
-    `${env.BASE_URL}/get_asignaturas/${env.RUN}/${env.CARRER_CODE}/${env.PCA_CODE}/${env.ADMISSION_YEAR}/${env.ADMISSION_SEMESTER}/${year}/${semester}`,
+    `${env.BASE_URL}/get_asignaturas/${env.RUN}/${env.CARRER_CODE}/${env.PCA_CODE}/${env.ADMISSION_YEAR}/` +
+      `${env.ADMISSION_SEMESTER}/${year}/${semester}`,
     {
       headers: {
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
@@ -36,9 +37,8 @@ const getCalificaciones = async (
   env: Env
 ): Promise<Calificaciones> => {
   const response = await fetch(
-    `${env.BASE_URL}/get_calificaciones${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}/${year}/${semester}${
-      other ? `/${other}` : ""
-    }`,
+    `${env.BASE_URL}/get_calificaciones${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}/${year}/` +
+      `${semester}${other ? `/${other}` : ""}`,
     {
       headers: {
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
@@ -58,17 +58,7 @@ const getCalificaciones = async (
 };
 
 const getModulos = async (
-  {
-    code,
-    section,
-    year,
-    semester
-  }: {
-    code: number;
-    section: number;
-    year: number;
-    semester: number;
-  },
+  { code, section, year, semester }: { code: number; section: number; year: number; semester: number },
   env: Env
 ): Promise<Modulo[]> => {
   const response = await fetch(`${env.BASE_URL}/get_modulos/${code}/${section}/${year}/${semester}`, {

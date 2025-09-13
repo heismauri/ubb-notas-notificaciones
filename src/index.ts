@@ -3,7 +3,10 @@ import { getAsignaturas, getCalificaciones, getModulos } from "@/services/UBioBi
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 
-const sendDiscordNotification = async (payload: DiscordWebhookPayload, env: Env) => {
+const sendDiscordNotification = async (
+  payload: DiscordWebhookPayload,
+  env: Env
+): Promise<{ success: boolean; retryAfter?: number }> => {
   const response = await fetch(env.DISCORD_WEBHOOK_URL, {
     method: "POST",
     headers: {
@@ -12,16 +15,19 @@ const sendDiscordNotification = async (payload: DiscordWebhookPayload, env: Env)
     body: JSON.stringify(payload)
   });
   if (response.ok) {
-    return;
+    return { success: true };
   }
   if (response.status === 429) {
-    const data: { retry_after?: number } = await response.json();
-    const retryAfterSec = Math.ceil(data.retry_after || 1);
-    const error: any = new Error("Límite de tasa alcanzado al enviar la notificación");
-    error.retryAfterSec = retryAfterSec;
-    throw error;
+    try {
+      const data: { retry_after?: number } = await response.json();
+      const retryAfter = Math.ceil(data.retry_after || 1);
+      return { success: false, retryAfter };
+    } catch {
+      const retryAfter = Math.ceil(Number(response.headers.get("x-ratelimit-reset-after")));
+      return { success: false, retryAfter };
+    }
   }
-  throw new Error(`No se pudo enviar la notificación: ${response.status}`);
+  return { success: false }
 };
 
 const checkAndNotifyNewMarks = async (env: Env) => {
@@ -131,15 +137,13 @@ export default {
   async queue(batch, env) {
     for (const message of batch.messages) {
       const payload = genPayload(message.body as string[]);
-      try {
-        await sendDiscordNotification(payload, env);
+      const { success, retryAfter } = await sendDiscordNotification(payload, env);
+      if (success) {
         message.ack();
-      } catch (error: any) {
-        if (error.retryAfterSec) {
-          message.retry({ delaySeconds: error.retryAfterSec });
-        } else {
-          message.ack();
-        }
+        continue;
+      }
+      if (retryAfter) {
+        message.retry({ delaySeconds: retryAfter });
       }
     }
   }
