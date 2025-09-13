@@ -17,6 +17,9 @@ const getAsignaturas = async (
       }
     }
   );
+  if (response.status === 401) {
+    throw new Error("El token de autenticación es inválido o ha expirado");
+  }
   if (!response.ok) {
     throw new Error("No se pudieron obtener las asignaturas");
   }
@@ -49,6 +52,9 @@ const getCalificaciones = async (
       }
     }
   );
+  if (response.status === 401) {
+    throw new Error("El token de autenticación es inválido o ha expirado");
+  }
   if (!response.ok) {
     throw new Error("No se pudieron obtener las notas");
   }
@@ -79,6 +85,9 @@ const getModulos = async (
       "Cache-Control": "no-cache"
     }
   });
+  if (response.status === 401) {
+    throw new Error("El token de autenticación es inválido o ha expirado");
+  }
   if (!response.ok) {
     throw new Error("No se pudieron obtener los módulos");
   }
