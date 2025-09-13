@@ -1,25 +1,11 @@
-import type { Asignatura, Calificaciones } from "@/types/UBioBioResponses";
+import type { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
 
 const getAsignaturas = async (
-  {
-    careerCode,
-    pcaCode,
-    admissionYear,
-    admissionSemester,
-    year,
-    semester
-  }: {
-    careerCode: string;
-    pcaCode: string;
-    admissionYear: number;
-    admissionSemester: number;
-    year: number;
-    semester: number;
-  },
+  { year, semester }: { year: number; semester: number },
   env: Env
 ): Promise<Asignatura[]> => {
   const response = await fetch(
-    `${env.BASE_URL}/get_asignaturas/${env.RUN}/${careerCode}/${pcaCode}/${admissionYear}/${admissionSemester}/${year}/${semester}`,
+    `${env.BASE_URL}/get_asignaturas/${env.RUN}/${env.CARRER_CODE}/${env.PCA_CODE}/${env.ADMISSION_YEAR}/${env.ADMISSION_SEMESTER}/${year}/${semester}`,
     {
       headers: {
         "Accept": "*/*",
@@ -76,13 +62,13 @@ const getModulos = async (
     year,
     semester
   }: {
-    code: string;
-    section: string;
-    year: string;
-    semester: string;
+    code: number;
+    section: number;
+    year: number;
+    semester: number;
   },
   env: Env
-) => {
+): Promise<Modulo[]> => {
   const response = await fetch(`${env.BASE_URL}/get_modulos/${env.RUN}/${code}/${section}/${year}/${semester}`, {
     headers: {
       "Accept": "*/*",

@@ -15,3 +15,10 @@ export interface Asignatura {
   mla_sec_numero: number;
   sec_ind_modular: number;
 }
+
+export interface Modulo {
+  mod_correlativo: number;
+  mod_nombre: string;
+  mod_numero: number;
+  ddo_correlativo: number;
+}
