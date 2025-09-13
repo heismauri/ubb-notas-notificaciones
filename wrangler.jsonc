@@ -4,7 +4,7 @@
   "keep_vars": true,
   "kv_namespaces": [
     {
-      "binding": "ubbnotas",
+      "binding": "DATA",
       "id": "e07452f6111945d4a5e8c5d12c6c568a",
       "preview_id": "073f9432fb444fa896b1d923e872bc46"
     }
@@ -17,6 +17,20 @@
   },
   "placement": {
     "mode": "smart"
+  },
+  "queues": {
+    "consumers": [
+      {
+        "queue": "discord-notifications",
+        "max_retries": 100
+      }
+    ],
+    "producers": [
+      {
+        "queue": "discord-notifications",
+        "binding": "NOTIFICATIONS"
+      }
+    ]
   },
   "triggers": {
     "crons": [
