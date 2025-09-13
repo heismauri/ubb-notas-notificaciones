@@ -8,9 +8,7 @@ const getAsignaturas = async (
     `${env.BASE_URL}/get_asignaturas/${env.RUN}/${env.CARRER_CODE}/${env.PCA_CODE}/${env.ADMISSION_YEAR}/${env.ADMISSION_SEMESTER}/${year}/${semester}`,
     {
       headers: {
-        "Accept": "*/*",
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-        "Accept-Language": "en-US,en;q=0.9",
         "Authorization": `Bearer ${env.TOKEN}`,
         "Pragma": "no-cache",
         "Cache-Control": "no-cache"
@@ -43,9 +41,7 @@ const getCalificaciones = async (
     }`,
     {
       headers: {
-        "Accept": "*/*",
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-        "Accept-Language": "en-US,en;q=0.9",
         "Authorization": `Bearer ${env.TOKEN}`,
         "Pragma": "no-cache",
         "Cache-Control": "no-cache"
@@ -77,9 +73,7 @@ const getModulos = async (
 ): Promise<Modulo[]> => {
   const response = await fetch(`${env.BASE_URL}/get_modulos/${code}/${section}/${year}/${semester}`, {
     headers: {
-      "Accept": "*/*",
       "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-      "Accept-Language": "en-US,en;q=0.9",
       "Authorization": `Bearer ${env.TOKEN}`,
       "Pragma": "no-cache",
       "Cache-Control": "no-cache"
