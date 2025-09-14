@@ -1,5 +1,12 @@
 import type { Asignatura, Calificaciones, Carrera, Modulo } from "@/types/UBioBioResponses";
 
+const getHeaders = (token: string) => ({
+  "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
+  "Authorization": `Bearer ${token}`,
+  "Pragma": "no-cache",
+  "Cache-Control": "no-cache"
+});
+
 const getAsignaturas = async (
   {
     careerCode,
@@ -22,12 +29,7 @@ const getAsignaturas = async (
     `${env.BASE_URL}/calificaciones/get_asignaturas/${env.RUN}/${careerCode}/${pcaCode}/${admissionYear}/` +
       `${admissionSemester}/${year}/${semester}`,
     {
-      headers: {
-        "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-        "Authorization": `Bearer ${env.TOKEN}`,
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache"
-      }
+      headers: getHeaders(env.TOKEN)
     }
   );
   if (response.status === 401) {
@@ -51,16 +53,10 @@ const getCalificaciones = async (
   env: Env
 ): Promise<Calificaciones> => {
   const response = await fetch(
-    `${env.BASE_URL}/calificaciones/get_calificaciones${modular ? "_modular" : ""}/${
-      env.RUN
-    }/${code}/${section}/${year}/` + `${semester}${other ? `/${other}` : ""}`,
+    `${env.BASE_URL}/calificaciones/get_calificaciones${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}` +
+      `/${year}/${semester}${other ? `/${other}` : ""}`,
     {
-      headers: {
-        "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-        "Authorization": `Bearer ${env.TOKEN}`,
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache"
-      }
+      headers: getHeaders(env.TOKEN)
     }
   );
   if (response.status === 401) {
@@ -74,12 +70,7 @@ const getCalificaciones = async (
 
 const getCarreras = async (env: Env): Promise<Carrera[]> => {
   const response = await fetch(`${env.BASE_URL}/v2/config/get_carreras/${env.RUN}`, {
-    headers: {
-      "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-      "Authorization": `Bearer ${env.TOKEN}`,
-      "Pragma": "no-cache",
-      "Cache-Control": "no-cache"
-    }
+    headers: getHeaders(env.TOKEN)
   });
   if (response.status === 401) {
     throw new Error("El token de autenticación es inválido o ha expirado");
@@ -95,12 +86,7 @@ const getModulos = async (
   env: Env
 ): Promise<Modulo[]> => {
   const response = await fetch(`${env.BASE_URL}/calificaciones/get_modulos/${code}/${section}/${year}/${semester}`, {
-    headers: {
-      "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
-      "Authorization": `Bearer ${env.TOKEN}`,
-      "Pragma": "no-cache",
-      "Cache-Control": "no-cache"
-    }
+    headers: getHeaders(env.TOKEN)
   });
   if (response.status === 401) {
     throw new Error("El token de autenticación es inválido o ha expirado");
