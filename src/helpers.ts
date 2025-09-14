@@ -4,18 +4,13 @@ import type { Calificaciones } from "@/types/UBioBioResponses";
 const getMarksCount = (marksResponse: Calificaciones) => {
   return marksResponse.calificaciones.flatMap((calificacion) => {
     const subgrades = calificacion.subcal || [];
-    return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)].filter((mark) => mark !== "");
+    return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)].filter((mark) => parseFloat(mark) > 0);
   }).length;
 };
 
 const getCourseMessage = (course: Course) => {
   return `El ramo **"${course.name}"** (${course.code}) subió una nueva nota`;
 };
-
-const getCurrentSemester = () => {
-  const month = new Date().getMonth();
-  return month >= 7 ? 2 : 1;
-}
 
 const genPayload = (messages: string[]) => {
   return {
@@ -43,4 +38,4 @@ const genErrorPayload = (error: Error) => {
   };
 };
 
-export { genErrorPayload, genPayload, getCourseMessage, getCurrentSemester, getMarksCount };
+export { genErrorPayload, genPayload, getCourseMessage, getMarksCount };

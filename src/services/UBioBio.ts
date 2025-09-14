@@ -1,12 +1,26 @@
-import type { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
+import type { Asignatura, Calificaciones, Carrera, Modulo } from "@/types/UBioBioResponses";
 
 const getAsignaturas = async (
-  { year, semester }: { year: number; semester: number },
+  {
+    careerCode,
+    pcaCode,
+    admissionYear,
+    admissionSemester,
+    year,
+    semester
+  }: {
+    careerCode: number;
+    pcaCode: number;
+    admissionYear: number;
+    admissionSemester: number;
+    year: number;
+    semester: number;
+  },
   env: Env
 ): Promise<Asignatura[]> => {
   const response = await fetch(
-    `${env.BASE_URL}/get_asignaturas/${env.RUN}/${env.CAREER_CODE}/${env.PCA_CODE}/${env.ADMISSION_YEAR}/` +
-      `${env.ADMISSION_SEMESTER}/${year}/${semester}`,
+    `${env.BASE_URL}/calificaciones/get_asignaturas/${env.RUN}/${careerCode}/${pcaCode}/${admissionYear}/` +
+      `${admissionSemester}/${year}/${semester}`,
     {
       headers: {
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
@@ -37,8 +51,9 @@ const getCalificaciones = async (
   env: Env
 ): Promise<Calificaciones> => {
   const response = await fetch(
-    `${env.BASE_URL}/get_calificaciones${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}/${year}/` +
-      `${semester}${other ? `/${other}` : ""}`,
+    `${env.BASE_URL}/calificaciones/get_calificaciones${modular ? "_modular" : ""}/${
+      env.RUN
+    }/${code}/${section}/${year}/` + `${semester}${other ? `/${other}` : ""}`,
     {
       headers: {
         "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
@@ -79,7 +94,7 @@ const getModulos = async (
   { code, section, year, semester }: { code: number; section: number; year: number; semester: number },
   env: Env
 ): Promise<Modulo[]> => {
-  const response = await fetch(`${env.BASE_URL}/get_modulos/${code}/${section}/${year}/${semester}`, {
+  const response = await fetch(`${env.BASE_URL}/calificaciones/get_modulos/${code}/${section}/${year}/${semester}`, {
     headers: {
       "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
       "Authorization": `Bearer ${env.TOKEN}`,
@@ -96,4 +111,4 @@ const getModulos = async (
   return response.json();
 };
 
-export { getAsignaturas, getCalificaciones, getModulos };
+export { getAsignaturas, getCalificaciones, getCarreras, getModulos };
