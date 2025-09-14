@@ -6,28 +6,33 @@ import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 const sendDiscordNotification = async (
   payload: DiscordWebhookPayload,
   env: Env
-): Promise<{ success: boolean; retryAfter?: number }> => {
-  const response = await fetch(env.DISCORD_WEBHOOK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-  if (response.ok) {
-    return { success: true };
-  }
-  if (response.status === 429) {
-    try {
-      const data: { retry_after?: number } = await response.json();
-      const retryAfter = Math.ceil(data.retry_after || 1);
-      return { success: false, retryAfter };
-    } catch {
-      const retryAfter = Math.ceil(Number(response.headers.get("x-ratelimit-reset-after")));
-      return { success: false, retryAfter };
+): Promise<{ success: boolean; retryAfter?: number; status?: number; body?: string; error?: string }> => {
+  try {
+    const response = await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      return { success: true };
     }
+    const body = await response.text();
+    if (response.status === 429) {
+      try {
+        const data: { retry_after?: number } = JSON.parse(body);
+        const retryAfter = Math.ceil(data.retry_after || 1);
+        return { success: false, retryAfter };
+      } catch {
+        const retryAfter = Math.ceil(Number(response.headers.get("x-ratelimit-reset-after")));
+        return { success: false, retryAfter };
+      }
+    }
+    return { success: false, status: response.status, body };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
   }
-  return { success: false };
 };
 
 const checkNewMarks = async (env: Env) => {
@@ -50,8 +55,6 @@ const checkNewMarks = async (env: Env) => {
   if (newMarkMessages.length > 0) {
     await env.NOTIFICATIONS.send(newMarkMessages);
     await env.DATA.put("courses", JSON.stringify(courses));
-  } else {
-    console.log("No hay nuevas notas");
   }
   return newMarkMessages;
 };
@@ -162,7 +165,6 @@ export default {
           return new Response(JSON.stringify({ success: false, message: "No encontrado" }), { status: 404 });
       }
     } catch (error) {
-      console.error(error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
       return new Response(JSON.stringify({ success: false, message: errorMessage }), { status: 422 });
     }
@@ -179,13 +181,17 @@ export default {
   async queue(batch, env) {
     for (const message of batch.messages) {
       const payload = genPayload(message.body as string[]);
-      const { success, retryAfter } = await sendDiscordNotification(payload, env);
-      if (success) {
+      const result = await sendDiscordNotification(payload, env);
+      if (result.success) {
         message.ack();
         continue;
       }
-      if (retryAfter) {
-        message.retry({ delaySeconds: retryAfter });
+      if (result.retryAfter) {
+        message.retry({ delaySeconds: result.retryAfter });
+        continue;
+      }
+      if (!result.success) {
+        throw new Error(`${JSON.stringify(result)}`);
       }
     }
   }
