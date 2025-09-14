@@ -57,6 +57,24 @@ const getCalificaciones = async (
   return response.json();
 };
 
+const getCarreras = async (env: Env): Promise<Carrera[]> => {
+  const response = await fetch(`${env.BASE_URL}/v2/config/get_carreras/${env.RUN}`, {
+    headers: {
+      "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
+      "Authorization": `Bearer ${env.TOKEN}`,
+      "Pragma": "no-cache",
+      "Cache-Control": "no-cache"
+    }
+  });
+  if (response.status === 401) {
+    throw new Error("El token de autenticación es inválido o ha expirado");
+  }
+  if (!response.ok) {
+    throw new Error("No se pudieron obtener las carreras");
+  }
+  return response.json();
+};
+
 const getModulos = async (
   { code, section, year, semester }: { code: number; section: number; year: number; semester: number },
   env: Env
