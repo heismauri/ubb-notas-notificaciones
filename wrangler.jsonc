@@ -21,14 +21,14 @@
   "queues": {
     "consumers": [
       {
-        "queue": "discord-notifications",
-        "max_retries": 100
+        "max_retries": 100,
+        "queue": "discord-notifications"
       }
     ],
     "producers": [
       {
-        "queue": "discord-notifications",
-        "binding": "NOTIFICATIONS"
+        "binding": "NOTIFICATIONS",
+        "queue": "discord-notifications"
       }
     ]
   },
@@ -38,5 +38,6 @@
       "*/30 10-23 * 3-12 *",
       "*/30 0-3 * 3-12 *"
     ]
-  }
+  },
+  "workers_dev": false
 }
