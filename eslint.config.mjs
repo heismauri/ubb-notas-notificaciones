@@ -13,7 +13,7 @@ export default defineConfig([
   {
     rules: {
       "max-len": ["error", { code: 120, ignoreComments: true }],
-      "no-console": "warn",
+      "no-console": ["error", { allow: ["warn", "error"] }],
     }
   }
 ]);

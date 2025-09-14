@@ -25,7 +25,8 @@ const sendDiscordNotification = async (
         const retryAfter = Math.ceil(data.retry_after || 1);
         return { success: false, retryAfter };
       } catch {
-        const retryAfter = Math.ceil(Number(response.headers.get("x-ratelimit-reset-after")));
+        const headerValue = response.headers.get("x-ratelimit-reset-after");
+        const retryAfter = Math.ceil(Number(headerValue) || 1);
         return { success: false, retryAfter };
       }
     }
@@ -179,20 +180,22 @@ export default {
     }
   },
   async queue(batch, env) {
-    for (const message of batch.messages) {
-      const payload = genPayload(message.body as string[]);
-      const result = await sendDiscordNotification(payload, env);
-      if (result.success) {
-        message.ack();
-        continue;
-      }
-      if (result.retryAfter) {
-        message.retry({ delaySeconds: result.retryAfter });
-        continue;
-      }
-      if (!result.success) {
-        throw new Error(`${JSON.stringify(result)}`);
-      }
-    }
+    await Promise.all(
+      batch.messages.map(async (message) => {
+        const payload = genPayload(message.body as string[]);
+        const result = await sendDiscordNotification(payload, env);
+        if (result.success) {
+          message.ack();
+          return;
+        }
+        if (result.retryAfter) {
+          message.retry({ delaySeconds: result.retryAfter });
+          return;
+        }
+        if (!result.success) {
+          throw new Error(`${JSON.stringify(result)}`);
+        }
+      })
+    );
   }
 } satisfies ExportedHandler<Env>;
