@@ -27,10 +27,10 @@ const sendDiscordNotification = async (
       return { success: false, retryAfter };
     }
   }
-  return { success: false }
+  return { success: false };
 };
 
-const checkAndNotifyNewMarks = async (env: Env) => {
+const checkNewMarks = async (env: Env) => {
   const coursesKV = await env.DATA.get("courses");
   const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
   if (courses.length === 0) {
@@ -60,6 +60,9 @@ const refreshCourses = async (url: URL, env: Env) => {
   const year = parseInt(url.searchParams.get("year") || "") || new Date().getFullYear();
   const semester = parseInt(url.searchParams.get("semester") || "") || getCurrentSemester();
   const asignaturas = await getAsignaturas({ year, semester }, env);
+  if (asignaturas.length === 0) {
+    throw new Error("No se encontraron cursos");
+  }
   const courses: Course[] = asignaturas.map((a) => {
     return {
       name: a.agn_nombre,
@@ -78,7 +81,7 @@ const refreshCourses = async (url: URL, env: Env) => {
         const modulos = await getModulos(course, env);
         if (modulos.length > 0) {
           modulos.map((mod) => {
-            const other = `${env.CARRER_CODE}/${env.PCA_CODE}/${mod.mod_numero}/${mod.ddo_correlativo}`;
+            const other = `${env.CAREER_CODE}/${env.PCA_CODE}/${mod.mod_numero}/${mod.ddo_correlativo}`;
             courses.push({
               name: `${course.name} - ${mod.mod_nombre}${mod.ddo_correlativo === 2 ? "R" : ""}`,
               code: course.code,
@@ -97,7 +100,7 @@ const refreshCourses = async (url: URL, env: Env) => {
       }
     })
   );
-  indicesToRemove.sort((a, b) => b - a).forEach(idx => courses.splice(idx, 1));
+  indicesToRemove.sort((a, b) => b - a).forEach((idx) => courses.splice(idx, 1));
   courses.sort((a, b) => b.code - a.code);
   await Promise.all(
     courses.map(async (course) => {
@@ -127,7 +130,7 @@ export default {
   },
   async scheduled(_, env) {
     try {
-      await checkAndNotifyNewMarks(env);
+      await checkNewMarks(env);
       return;
     } catch (error) {
       await env.NOTIFICATIONS.send(genErrorPayload(error as Error));

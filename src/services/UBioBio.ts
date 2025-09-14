@@ -5,7 +5,7 @@ const getAsignaturas = async (
   env: Env
 ): Promise<Asignatura[]> => {
   const response = await fetch(
-    `${env.BASE_URL}/get_asignaturas/${env.RUN}/${env.CARRER_CODE}/${env.PCA_CODE}/${env.ADMISSION_YEAR}/` +
+    `${env.BASE_URL}/get_asignaturas/${env.RUN}/${env.CAREER_CODE}/${env.PCA_CODE}/${env.ADMISSION_YEAR}/` +
       `${env.ADMISSION_SEMESTER}/${year}/${semester}`,
     {
       headers: {
