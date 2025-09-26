@@ -9,7 +9,7 @@ const getMarksCount = (marksResponse: Calificaciones) => {
 };
 
 const getCourseMessage = (course: Course) => {
-  return `El ramo **"${course.name}"** (${course.code}) subió una nueva nota`;
+  return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota`;
 };
 
 const genPayload = (messages: string[]) => {
@@ -17,7 +17,7 @@ const genPayload = (messages: string[]) => {
     content: null,
     embeds: [
       {
-        title: "¡Nuevas notas disponibles!",
+        title: "Nuevas notas disponibles",
         description: messages.join("\n"),
         color: 84120
       }
