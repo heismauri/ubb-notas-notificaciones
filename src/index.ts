@@ -54,7 +54,7 @@ const checkNewMarks = async (env: Env) => {
     })
   );
   if (newMarkMessages.length > 0) {
-    await env.NOTIFICATIONS.send(newMarkMessages);
+    await env.NOTIFICATIONS.send(genPayload(newMarkMessages));
     await env.DATA.put("courses", JSON.stringify(courses));
   }
   return newMarkMessages;
@@ -182,8 +182,7 @@ export default {
   async queue(batch, env) {
     await Promise.all(
       batch.messages.map(async (message) => {
-        const payload = genPayload(message.body as string[]);
-        const result = await sendDiscordNotification(payload, env);
+        const result = await sendDiscordNotification(message.body as DiscordWebhookPayload, env);
         if (result.success) {
           message.ack();
           return;
