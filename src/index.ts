@@ -63,9 +63,10 @@ const checkNewMarks = async (env: Env) => {
   await Promise.all(
     courses.map(async (course) => {
       const calificaciones = await getCalificaciones(course, env);
-      const marksCount = getMarksCount(calificaciones);
-      if ((course.marksCount || 0) < marksCount) {
-        course.marksCount = marksCount;
+      const { total, current } = getMarksCount(calificaciones);
+      if ((course.marksCount || 0) < current) {
+        course.marksCount = current;
+        course.totalMarksCount = total;
         newMarkMessages.push(getCourseMessage(course));
       }
     })
@@ -132,7 +133,8 @@ const refreshCourses = async (env: Env) => {
       modular: a.sec_ind_modular !== 0,
       year: careerInfo.currentYear,
       semester: careerInfo.currentSemester,
-      marksCount: 0
+      marksCount: 0,
+      totalMarksCount: 0
     };
   });
   const indicesToRemove: number[] = [];
@@ -151,7 +153,8 @@ const refreshCourses = async (env: Env) => {
               semester: course.semester,
               modular: course.modular,
               other,
-              marksCount: 0
+              marksCount: 0,
+              totalMarksCount: 0
             });
           });
           indicesToRemove.push(idx);
@@ -166,10 +169,15 @@ const refreshCourses = async (env: Env) => {
   await Promise.all(
     courses.map(async (course) => {
       const calificaciones = await getCalificaciones(course, env);
-      course.marksCount = getMarksCount(calificaciones);
+      const { total, current } = getMarksCount(calificaciones);
+      course.marksCount = current;
+      course.totalMarksCount = total;
     })
   );
-  await env.DATA.put("courses", JSON.stringify(courses));
+  const finalCourses = courses.filter(
+    (course) => course.totalMarksCount === 0 || course.marksCount !== course.totalMarksCount
+  );
+  await env.DATA.put("courses", JSON.stringify(finalCourses));
 };
 
 export default {
