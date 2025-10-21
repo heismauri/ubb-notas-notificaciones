@@ -3,6 +3,23 @@ import { getAsignaturas, getCalificaciones, getCarreras, getModulos } from "@/se
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 
+const sendNtfyNotification = async (message: string, env: Env) => {
+  try {
+    const response = await fetch(env.NTFY_URL, {
+      method: "POST",
+      headers: {
+        Title: "Nuevas notas disponibles"
+      },
+      body: message.replace(/\*\*/g, "")
+    });
+    if (!response.ok) {
+      throw new Error(`Error enviando notificación a ntfy: ${response.status} ${await response.text()}`);
+    }
+  } catch (error) {
+    console.error("Error enviando notificación a ntfy:", (error as Error).message);
+  }
+};
+
 const sendDiscordNotification = async (
   payload: DiscordWebhookPayload,
   env: Env
@@ -54,6 +71,7 @@ const checkNewMarks = async (env: Env) => {
     })
   );
   if (newMarkMessages.length > 0) {
+    await sendNtfyNotification(newMarkMessages.join("\n"), env);
     await env.NOTIFICATIONS.send(genPayload(newMarkMessages));
     await env.DATA.put("courses", JSON.stringify(courses));
   }
@@ -176,6 +194,7 @@ export default {
       return;
     } catch (error) {
       await env.NOTIFICATIONS.send(genErrorPayload(error as Error));
+      await sendNtfyNotification(error instanceof Error ? error.message : "Error desconocido", env);
       return;
     }
   },
