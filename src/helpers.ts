@@ -1,11 +1,12 @@
 import type { Course } from "@/types/Course";
 import type { Calificaciones } from "@/types/UBioBioResponses";
 
-const getMarksCount = (marksResponse: Calificaciones) => {
-  return marksResponse.calificaciones.flatMap((calificacion) => {
+const getMarksCount = (marksResponse: Calificaciones): { total: number, current: number } => {
+  const total = marksResponse.calificaciones.flatMap((calificacion) => {
     const subgrades = calificacion.subcal || [];
-    return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)].filter((mark) => parseFloat(mark) > 0);
-  }).length;
+    return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)];
+  });
+  return { total: total.length, current: total.filter((mark) => parseFloat(mark) > 0).length };
 };
 
 const getCourseMessage = (course: Course) => {
