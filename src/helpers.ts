@@ -26,13 +26,13 @@ const genPayload = (messages: string[]) => {
   };
 };
 
-const genErrorPayload = (error: Error) => {
+const genErrorPayload = (message: string) => {
   return {
     content: null,
     embeds: [
       {
         title: "Error al obtener notas",
-        description: error instanceof Error ? error.message : "Error desconocido",
+        description: message,
         color: 16711680
       }
     ]

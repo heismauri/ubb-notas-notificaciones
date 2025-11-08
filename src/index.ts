@@ -3,12 +3,12 @@ import { getAsignaturas, getCalificaciones, getCarreras, getModulos } from "@/se
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 
-const sendNtfyNotification = async (message: string, env: Env) => {
+const sendNtfyNotification = async (title: string, message: string, env: Env) => {
   try {
     const response = await fetch(env.NTFY_URL, {
       method: "POST",
       headers: {
-        Title: "Nuevas notas disponibles"
+        Title: title
       },
       body: message.replace(/\*\*/g, "")
     });
@@ -72,7 +72,7 @@ const checkNewMarks = async (env: Env) => {
     })
   );
   if (newMarkMessages.length > 0) {
-    await sendNtfyNotification(newMarkMessages.join("\n"), env);
+    await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
     await env.NOTIFICATIONS.send(genPayload(newMarkMessages));
     await env.DATA.put("courses", JSON.stringify(courses));
   }
@@ -201,8 +201,9 @@ export default {
       await checkNewMarks(env);
       return;
     } catch (error) {
-      await env.NOTIFICATIONS.send(genErrorPayload(error as Error));
-      await sendNtfyNotification(error instanceof Error ? error.message : "Error desconocido", env);
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+      await env.NOTIFICATIONS.send(genErrorPayload(errorMessage));
+      await sendNtfyNotification("Error al obtener notas", errorMessage, env);
       return;
     }
   },
