@@ -187,13 +187,13 @@ export default {
       switch (url.pathname) {
         case "/":
           await refreshCourses(env);
-          return new Response(JSON.stringify({ success: true, message: "Cursos actualizados" }), { status: 200 });
+          return new Response(JSON.stringify({ message: "Cursos actualizados" }), { status: 200 });
         default:
-          return new Response(JSON.stringify({ success: false, message: "No encontrado" }), { status: 404 });
+          return new Response(JSON.stringify({ message: "No encontrado" }), { status: 404 });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      return new Response(JSON.stringify({ success: false, message: errorMessage }), { status: 422 });
+      return new Response(JSON.stringify({ message: errorMessage }), { status: 422 });
     }
   },
   async scheduled(_, env) {
