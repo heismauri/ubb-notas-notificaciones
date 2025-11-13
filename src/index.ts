@@ -61,19 +61,27 @@ const checkNewMarks = async (env: Env) => {
   }
   const newMarkMessages: string[] = [];
   await Promise.all(
-    courses.map(async (course) => {
+    courses.map(async (course, index) => {
       const calificaciones = await getCalificaciones(course, env);
       const { total, current } = getMarksCount(calificaciones);
       if ((course.marksCount || 0) < current) {
-        course.marksCount = current;
-        course.totalMarksCount = total;
-        newMarkMessages.push(getCourseMessage(course));
+        return { index, total, current };
       }
+      return null;
     })
-  );
+  ).then((results) => {
+    results.forEach((result) => {
+      if (!result) return;
+
+      const { index, total, current } = result;
+      courses[index].marksCount = current;
+      courses[index].totalMarksCount = total;
+      newMarkMessages.push(getCourseMessage(courses[index]));
+    });
+  });
   if (newMarkMessages.length > 0) {
-    await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
     await env.NOTIFICATIONS.send(genPayload(newMarkMessages));
+    await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
     await env.DATA.put("courses", JSON.stringify(courses));
   }
   return newMarkMessages;
@@ -139,13 +147,14 @@ const refreshCourses = async (env: Env) => {
   });
   const indicesToRemove: number[] = [];
   await Promise.all(
-    courses.map(async (course, idx) => {
+    courses.map(async (course, index) => {
       if (course.modular) {
+        const newCourses: Course[] = [];
         const modulos = await getModulos(course, env);
         if (modulos.length > 0) {
-          modulos.map((mod) => {
+          modulos.forEach((mod) => {
             const other = `${careerInfo.careerCode}/${careerInfo.pcaCode}/${mod.mod_numero}/${mod.ddo_correlativo}`;
-            courses.push({
+            newCourses.push({
               name: `${course.name} - ${mod.mod_nombre}${mod.ddo_correlativo === 2 ? "R" : ""}`,
               code: course.code,
               section: course.section,
@@ -157,14 +166,23 @@ const refreshCourses = async (env: Env) => {
               totalMarksCount: 0
             });
           });
-          indicesToRemove.push(idx);
+          return { index, newCourses };
         } else {
           throw new Error(`No se encontraron módulos para la asignatura modular: ${course.name}`);
         }
       }
+      return null;
     })
-  );
-  indicesToRemove.sort((a, b) => b - a).forEach((idx) => courses.splice(idx, 1));
+  ).then((results) => {
+    results.forEach((result) => {
+      if (result) {
+        const { index, newCourses } = result;
+        indicesToRemove.push(index);
+        newCourses.forEach((nc) => courses.push(nc));
+      }
+    });
+  });
+  indicesToRemove.sort((a, b) => b - a).forEach((index) => courses.splice(index, 1));
   courses.sort((a, b) => b.code - a.code);
   await Promise.all(
     courses.map(async (course) => {
@@ -214,7 +232,7 @@ export default {
         } else if (result.retryAfter) {
           message.retry({ delaySeconds: result.retryAfter });
         } else {
-          throw new Error(`${JSON.stringify(result)}`);
+          throw new Error(`Failed to send Discord notification: ${JSON.stringify(result)}`);
         }
       })
     );
