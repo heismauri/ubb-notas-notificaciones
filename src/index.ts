@@ -138,9 +138,9 @@ const refreshCourses = async (env: Env) => {
       name: a.agn_nombre,
       code: a.agn_codigo,
       section: a.mla_sec_numero,
-      modular: a.sec_ind_modular !== 0,
       year: careerInfo.currentYear,
       semester: careerInfo.currentSemester,
+      modular: a.sec_ind_modular !== 0,
       marksCount: 0,
       totalMarksCount: 0
     };
