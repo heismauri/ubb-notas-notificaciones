@@ -199,12 +199,10 @@ export default {
   async scheduled(_, env) {
     try {
       await checkNewMarks(env);
-      return;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
       await env.NOTIFICATIONS.send(genErrorPayload(errorMessage));
       await sendNtfyNotification("Error al obtener notas", errorMessage, env);
-      return;
     }
   },
   async queue(batch, env) {
@@ -213,13 +211,9 @@ export default {
         const result = await sendDiscordNotification(message.body as DiscordWebhookPayload, env);
         if (result.success) {
           message.ack();
-          return;
-        }
-        if (result.retryAfter) {
+        } else if (result.retryAfter) {
           message.retry({ delaySeconds: result.retryAfter });
-          return;
-        }
-        if (!result.success) {
+        } else {
           throw new Error(`${JSON.stringify(result)}`);
         }
       })
