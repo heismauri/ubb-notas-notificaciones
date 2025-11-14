@@ -1,59 +1,11 @@
 import { genErrorPayload, genPayload } from "@/helpers";
+import { sendNotification as sendDiscordNotification } from "@/services/Discord";
+import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
 import { getAsignaturas, getCarreras } from "@/services/UBioBio";
 import { Career } from "@/types/Career";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 import { expandModularCourses, findAndUpdateNewMarks, formatCourse } from "@/utils/course";
-
-const sendNtfyNotification = async (title: string, message: string, env: Env) => {
-  try {
-    const response = await fetch(env.NTFY_URL, {
-      method: "POST",
-      headers: {
-        Title: title
-      },
-      body: message.replace(/\*\*/g, "")
-    });
-    if (!response.ok) {
-      throw new Error(`Error enviando notificación a ntfy: ${response.status} ${await response.text()}`);
-    }
-  } catch (error) {
-    console.error("Error enviando notificación a ntfy:", (error as Error).message);
-  }
-};
-
-const sendDiscordNotification = async (
-  payload: DiscordWebhookPayload,
-  env: Env
-): Promise<{ success: boolean; retryAfter?: number; status?: number; body?: string; error?: string }> => {
-  try {
-    const response = await fetch(env.DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-    if (response.ok) {
-      return { success: true };
-    }
-    const body = await response.text();
-    if (response.status === 429) {
-      try {
-        const data: { retry_after?: number } = JSON.parse(body);
-        const retryAfter = Math.ceil(data.retry_after || 1);
-        return { success: false, retryAfter };
-      } catch {
-        const headerValue = response.headers.get("x-ratelimit-reset-after");
-        const retryAfter = Math.ceil(Number(headerValue) || 1);
-        return { success: false, retryAfter };
-      }
-    }
-    return { success: false, status: response.status, body };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-};
 
 const checkNewMarks = async (env: Env) => {
   const coursesKV = await env.DATA.get("courses");
