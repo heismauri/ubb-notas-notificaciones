@@ -1,11 +1,10 @@
 import { genErrorPayload, genPayload } from "@/helpers";
 import { sendNotification as sendDiscordNotification } from "@/services/Discord";
 import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
-import { getAsignaturas, getCarreras } from "@/services/UBioBio";
-import { Career } from "@/types/Career";
+import { getAsignaturas } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
-import { expandModularCourses, findAndUpdateNewMarks, formatCourse } from "@/utils/course";
+import { expandModularCourses, findAndUpdateNewMarks, formatCourse, getCurrentCareer } from "@/utils/course";
 
 const checkNewMarks = async (env: Env) => {
   const coursesKV = await env.DATA.get("courses");
@@ -20,37 +19,6 @@ const checkNewMarks = async (env: Env) => {
     await env.DATA.put("courses", JSON.stringify(courses));
   }
   return newMarkMessages;
-};
-
-const getCurrentCareer = async (env: Env) => {
-  const carreras = await getCarreras(env);
-  if (carreras.length === 0) {
-    throw new Error("No se encontraron carreras");
-  }
-  if (carreras.length > 1) {
-    carreras.sort((a, b) => {
-      if (a.ano_periodo[0].ano !== b.ano_periodo[0].ano) {
-        return b.ano_periodo[0].ano - a.ano_periodo[0].ano;
-      }
-      return b.ano_periodo[0].periodo - a.ano_periodo[0].periodo;
-    });
-  }
-  const carrera = carreras[0];
-  const currentPeriod = carrera.ano_periodo.sort((a, b) => {
-    if (a.ano !== b.ano) {
-      return b.ano - a.ano;
-    }
-    return b.periodo - a.periodo;
-  })[0];
-  const career: Career = {
-    careerCode: carrera.crr_codigo,
-    pcaCode: carrera.pca_codigo,
-    admissionYear: carrera.alc_ano_ingreso,
-    admissionSemester: carrera.alc_periodo,
-    year: currentPeriod.ano,
-    semester: currentPeriod.periodo
-  };
-  return career;
 };
 
 const refreshCourses = async (env: Env) => {

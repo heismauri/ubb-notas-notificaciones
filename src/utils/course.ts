@@ -1,5 +1,5 @@
 import { getCourseMessage, getMarksCount } from "@/helpers";
-import { getCalificaciones, getModulos } from "@/services/UBioBio";
+import { getCalificaciones, getCarreras, getModulos } from "@/services/UBioBio";
 import { Career } from "@/types/Career";
 import { Course } from "@/types/Course";
 import { Asignatura, Modulo } from "@/types/UBioBioResponses";
@@ -42,7 +42,7 @@ const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<strin
     })
   );
   return newMarkMessages;
-}
+};
 
 const formatCourse = (asignatura: Asignatura, year: number, semester: number) => {
   return {
@@ -71,4 +71,35 @@ const formatModule = (course: Course, mod: Modulo, other: string) => {
   };
 };
 
-export { expandModularCourses, findAndUpdateNewMarks, formatCourse, formatModule };
+const getCurrentCareer = async (env: Env) => {
+  const carreras = await getCarreras(env);
+  if (carreras.length === 0) {
+    throw new Error("No se encontraron carreras");
+  }
+  if (carreras.length > 1) {
+    carreras.sort((a, b) => {
+      if (a.ano_periodo[0].ano !== b.ano_periodo[0].ano) {
+        return b.ano_periodo[0].ano - a.ano_periodo[0].ano;
+      }
+      return b.ano_periodo[0].periodo - a.ano_periodo[0].periodo;
+    });
+  }
+  const carrera = carreras[0];
+  const currentPeriod = carrera.ano_periodo.sort((a, b) => {
+    if (a.ano !== b.ano) {
+      return b.ano - a.ano;
+    }
+    return b.periodo - a.periodo;
+  })[0];
+  const career: Career = {
+    careerCode: carrera.crr_codigo,
+    pcaCode: carrera.pca_codigo,
+    admissionYear: carrera.alc_ano_ingreso,
+    admissionSemester: carrera.alc_periodo,
+    year: currentPeriod.ano,
+    semester: currentPeriod.periodo
+  };
+  return career;
+};
+
+export { expandModularCourses, findAndUpdateNewMarks, formatCourse, formatModule, getCurrentCareer };
