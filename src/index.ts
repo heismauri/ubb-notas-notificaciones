@@ -1,7 +1,9 @@
-import { genErrorPayload, genPayload, getCourseMessage, getMarksCount } from "@/helpers";
-import { getAsignaturas, getCalificaciones, getCarreras, getModulos } from "@/services/UBioBio";
+import { genErrorPayload, genPayload } from "@/helpers";
+import { getAsignaturas, getCarreras } from "@/services/UBioBio";
+import { Career } from "@/types/Career";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
+import { expandModularCourses, findAndUpdateNewMarks, formatCourse } from "@/utils/course";
 
 const sendNtfyNotification = async (title: string, message: string, env: Env) => {
   try {
@@ -59,26 +61,7 @@ const checkNewMarks = async (env: Env) => {
   if (courses.length === 0) {
     throw new Error("No se encontraron cursos");
   }
-  const newMarkMessages: string[] = [];
-  await Promise.all(
-    courses.map(async (course, index) => {
-      const calificaciones = await getCalificaciones(course, env);
-      const { total, current } = getMarksCount(calificaciones);
-      if ((course.marksCount || 0) < current) {
-        return { index, total, current };
-      }
-      return null;
-    })
-  ).then((results) => {
-    results.forEach((result) => {
-      if (!result) return;
-
-      const { index, total, current } = result;
-      courses[index].marksCount = current;
-      courses[index].totalMarksCount = total;
-      newMarkMessages.push(getCourseMessage(courses[index]));
-    });
-  });
+  const newMarkMessages = await findAndUpdateNewMarks(courses, env);
   if (newMarkMessages.length > 0) {
     await env.NOTIFICATIONS.send(genPayload(newMarkMessages));
     await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
@@ -107,91 +90,29 @@ const getCurrentCareer = async (env: Env) => {
     }
     return b.periodo - a.periodo;
   })[0];
-  return {
+  const career: Career = {
     careerCode: carrera.crr_codigo,
     pcaCode: carrera.pca_codigo,
     admissionYear: carrera.alc_ano_ingreso,
     admissionSemester: carrera.alc_periodo,
-    currentYear: currentPeriod.ano,
-    currentSemester: currentPeriod.periodo
+    year: currentPeriod.ano,
+    semester: currentPeriod.periodo
   };
+  return career;
 };
 
 const refreshCourses = async (env: Env) => {
   const careerInfo = await getCurrentCareer(env);
-  const asignaturas = await getAsignaturas(
-    {
-      careerCode: careerInfo.careerCode,
-      pcaCode: careerInfo.pcaCode,
-      admissionYear: careerInfo.admissionYear,
-      admissionSemester: careerInfo.admissionSemester,
-      year: careerInfo.currentYear,
-      semester: careerInfo.currentSemester
-    },
-    env
-  );
+  const asignaturas = await getAsignaturas(careerInfo, env);
   if (asignaturas.length === 0) {
     throw new Error("No se encontraron cursos");
   }
   const courses: Course[] = asignaturas.map((a) => {
-    return {
-      name: a.agn_nombre,
-      code: a.agn_codigo,
-      section: a.mla_sec_numero,
-      year: careerInfo.currentYear,
-      semester: careerInfo.currentSemester,
-      modular: a.sec_ind_modular !== 0,
-      marksCount: 0,
-      totalMarksCount: 0
-    };
+    return formatCourse(a, careerInfo.year, careerInfo.semester);
   });
-  const indicesToRemove: number[] = [];
-  await Promise.all(
-    courses.map(async (course, index) => {
-      if (course.modular) {
-        const newCourses: Course[] = [];
-        const modulos = await getModulos(course, env);
-        if (modulos.length > 0) {
-          modulos.forEach((mod) => {
-            const other = `${careerInfo.careerCode}/${careerInfo.pcaCode}/${mod.mod_numero}/${mod.ddo_correlativo}`;
-            newCourses.push({
-              name: `${course.name} - ${mod.mod_nombre}${mod.ddo_correlativo === 2 ? "R" : ""}`,
-              code: course.code,
-              section: course.section,
-              year: course.year,
-              semester: course.semester,
-              modular: course.modular,
-              other,
-              marksCount: 0,
-              totalMarksCount: 0
-            });
-          });
-          return { index, newCourses };
-        } else {
-          throw new Error(`No se encontraron módulos para la asignatura modular: ${course.name}`);
-        }
-      }
-      return null;
-    })
-  ).then((results) => {
-    results.forEach((result) => {
-      if (result) {
-        const { index, newCourses } = result;
-        indicesToRemove.push(index);
-        newCourses.forEach((nc) => courses.push(nc));
-      }
-    });
-  });
-  indicesToRemove.sort((a, b) => b - a).forEach((index) => courses.splice(index, 1));
+  await expandModularCourses(courses, careerInfo, env);
   courses.sort((a, b) => b.code - a.code);
-  await Promise.all(
-    courses.map(async (course) => {
-      const calificaciones = await getCalificaciones(course, env);
-      const { total, current } = getMarksCount(calificaciones);
-      course.marksCount = current;
-      course.totalMarksCount = total;
-    })
-  );
+  await findAndUpdateNewMarks(courses, env);
   const finalCourses = courses.filter(
     (course) => course.totalMarksCount === 0 || course.marksCount !== course.totalMarksCount
   );
