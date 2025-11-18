@@ -23,7 +23,8 @@ const getAsignaturas = async (
     year: number;
     semester: number;
   },
-  env: Env
+  env: Env,
+  firstTry = true
 ): Promise<Asignatura[]> => {
   const response = await fetch(
     `${env.BASE_URL}/calificaciones/get_asignaturas/${env.RUN}/${careerCode}/${pcaCode}/${admissionYear}/` +
@@ -36,6 +37,9 @@ const getAsignaturas = async (
     throw new Error("El token de autenticación es inválido o ha expirado");
   }
   if (!response.ok) {
+    if (firstTry) {
+      return getAsignaturas({ careerCode, pcaCode, admissionYear, admissionSemester, year, semester }, env, false);
+    }
     throw new Error("No se pudieron obtener las asignaturas");
   }
   return response.json();
@@ -50,7 +54,8 @@ const getCalificaciones = async (
     other,
     modular = false
   }: { code: number; section: number; year: number; semester: number; other?: string; modular?: boolean },
-  env: Env
+  env: Env,
+  firstTry = true
 ): Promise<Calificaciones> => {
   const response = await fetch(
     `${env.BASE_URL}/calificaciones/get_calificaciones${modular ? "_modular" : ""}/${env.RUN}/${code}/${section}` +
@@ -63,12 +68,15 @@ const getCalificaciones = async (
     throw new Error("El token de autenticación es inválido o ha expirado");
   }
   if (!response.ok) {
+    if (firstTry) {
+      return getCalificaciones({ code, section, year, semester, other, modular }, env, false);
+    }
     throw new Error("No se pudieron obtener las notas");
   }
   return response.json();
 };
 
-const getCarreras = async (env: Env): Promise<Carrera[]> => {
+const getCarreras = async (env: Env, firstTry = true): Promise<Carrera[]> => {
   const response = await fetch(`${env.BASE_URL}/v2/config/get_carreras/${env.RUN}`, {
     headers: getHeaders(env.TOKEN)
   });
@@ -76,6 +84,9 @@ const getCarreras = async (env: Env): Promise<Carrera[]> => {
     throw new Error("El token de autenticación es inválido o ha expirado");
   }
   if (!response.ok) {
+    if (firstTry) {
+      return getCarreras(env, false);
+    }
     throw new Error("No se pudieron obtener las carreras");
   }
   return response.json();
@@ -83,7 +94,8 @@ const getCarreras = async (env: Env): Promise<Carrera[]> => {
 
 const getModulos = async (
   { code, section, year, semester }: { code: number; section: number; year: number; semester: number },
-  env: Env
+  env: Env,
+  firstTry = true
 ): Promise<Modulo[]> => {
   const response = await fetch(`${env.BASE_URL}/calificaciones/get_modulos/${code}/${section}/${year}/${semester}`, {
     headers: getHeaders(env.TOKEN)
@@ -92,6 +104,9 @@ const getModulos = async (
     throw new Error("El token de autenticación es inválido o ha expirado");
   }
   if (!response.ok) {
+    if (firstTry) {
+      return getModulos({ code, section, year, semester }, env, false);
+    }
     throw new Error("No se pudieron obtener los módulos");
   }
   return response.json();
