@@ -13,30 +13,17 @@ const getCourseMessage = (course: Course) => {
   return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota`;
 };
 
-const genPayload = (messages: string[]) => {
+const genPayload = (title: string, messages: string[], color: number) => {
   return {
     content: null,
     embeds: [
       {
-        title: "Nuevas notas disponibles",
+        title,
         description: messages.join("\n"),
-        color: 84120
+        color
       }
     ]
   };
 };
 
-const genErrorPayload = (message: string) => {
-  return {
-    content: null,
-    embeds: [
-      {
-        title: "Error al obtener notas",
-        description: message,
-        color: 16711680
-      }
-    ]
-  };
-};
-
-export { genErrorPayload, genPayload, getCourseMessage, getMarksCount };
+export { genPayload, getCourseMessage, getMarksCount };

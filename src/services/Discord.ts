@@ -1,5 +1,8 @@
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 
+export const SUCCESS_COLOR = 84120;
+export const ERROR_COLOR = 16711680;
+
 const sendNotification = async (
   payload: DiscordWebhookPayload,
   env: Env

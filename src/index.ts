@@ -1,5 +1,5 @@
-import { genErrorPayload, genPayload } from "@/helpers";
-import { sendNotification as sendDiscordNotification } from "@/services/Discord";
+import { genPayload } from "@/helpers";
+import { ERROR_COLOR, sendNotification as sendDiscordNotification, SUCCESS_COLOR } from "@/services/Discord";
 import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
 import { getAsignaturas } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
@@ -14,7 +14,7 @@ const checkNewMarks = async (env: Env) => {
   }
   const newMarkMessages = await findAndUpdateNewMarks(courses, env);
   if (newMarkMessages.length > 0) {
-    await env.NOTIFICATIONS.send(genPayload(newMarkMessages));
+    await env.NOTIFICATIONS.send(genPayload("Nuevas notas disponibles", newMarkMessages, SUCCESS_COLOR));
     await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
     await env.DATA.put("courses", JSON.stringify(courses));
   }
@@ -64,7 +64,7 @@ export default {
       await checkNewMarks(env);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      await env.NOTIFICATIONS.send(genErrorPayload(errorMessage));
+      await env.NOTIFICATIONS.send(genPayload("Error al obtener notas", [errorMessage], ERROR_COLOR));
       await sendNtfyNotification("Error al obtener notas", errorMessage, env);
     }
   },
