@@ -70,8 +70,8 @@ export default {
   },
   async queue(batch, env) {
     await Promise.all(
-      batch.messages.map(async (message) => {
-        const result = await sendDiscordNotification(message.body as DiscordWebhookPayload, env);
+      (batch as MessageBatch<DiscordWebhookPayload>).messages.map(async (message) => {
+        const result = await sendDiscordNotification(message.body, env);
         if (result.success) {
           message.ack();
         } else if (result.retryAfter) {
