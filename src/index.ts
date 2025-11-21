@@ -57,6 +57,10 @@ export default {
   },
   async scheduled(_, env) {
     try {
+      if (env.SKIP_REFRESH_ON_SCHEDULED === "true") {
+        console.warn("Skipping check for new marks.");
+        return;
+      }
       await checkNewMarks(env);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
