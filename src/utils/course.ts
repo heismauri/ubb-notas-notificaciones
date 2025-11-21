@@ -1,8 +1,7 @@
-import { getCourseMessage, getMarksCount } from "@/helpers";
 import { getCalificaciones, getCarreras, getModulos } from "@/services/UBioBio";
 import { Career } from "@/types/Career";
 import { Course } from "@/types/Course";
-import { Asignatura, Modulo } from "@/types/UBioBioResponses";
+import { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
 
 const expandModularCourses = async (courses: Course[], careerInfo: Career, env: Env): Promise<Course[]> => {
   const indicesToRemove: number[] = [];
@@ -71,6 +70,10 @@ const formatModule = (course: Course, mod: Modulo, other: string) => {
   };
 };
 
+const getCourseMessage = (course: Course) => {
+  return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota`;
+};
+
 const getCurrentCareer = async (env: Env) => {
   const carreras = await getCarreras(env);
   if (carreras.length === 0) {
@@ -102,4 +105,12 @@ const getCurrentCareer = async (env: Env) => {
   return career;
 };
 
-export { expandModularCourses, findAndUpdateNewMarks, formatCourse, formatModule, getCurrentCareer };
+const getMarksCount = (marksResponse: Calificaciones): { total: number; current: number } => {
+  const total = marksResponse.calificaciones.flatMap((calificacion) => {
+    const subgrades = calificacion.subcal || [];
+    return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)];
+  });
+  return { total: total.length, current: total.filter((mark) => parseFloat(mark) > 0).length };
+};
+
+export { expandModularCourses, findAndUpdateNewMarks, formatCourse, formatModule, getCurrentCareer, getMarksCount };
