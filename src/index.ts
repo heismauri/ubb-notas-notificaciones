@@ -1,10 +1,10 @@
-import { genPayload } from "@/helpers";
 import { ERROR_COLOR, sendNotification as sendDiscordNotification, SUCCESS_COLOR } from "@/services/Discord";
 import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
 import { getAsignaturas } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 import { expandModularCourses, findAndUpdateNewMarks, formatCourse, getCurrentCareer } from "@/utils/course";
+import { genPayload } from "@/utils/discord";
 
 const checkNewMarks = async (env: Env) => {
   const coursesKV = await env.DATA.get("courses");
