@@ -1,24 +1,17 @@
-import { env, createExecutionContext, waitOnExecutionContext, SELF } from "cloudflare:test";
-import { describe, it, expect } from "vitest";
-import worker from "../src/index";
+import worker from "@/index";
+import { createExecutionContext, env, SELF, waitOnExecutionContext } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 
-// For now, you'll need to do something like this to get a correctly-typed
-// `Request` to pass to `worker.fetch()`.
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
-describe("Hello World worker", () => {
-  it("responds with Hello World! (unit style)", async () => {
+describe("Refresh courses", () => {
+  it("responds with a success message", async () => {
     const request = new IncomingRequest("http://example.com");
-    // Create an empty context to pass to `worker.fetch()`.
     const ctx = createExecutionContext();
     const response = await worker.fetch(request, env);
-    // Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
     await waitOnExecutionContext(ctx);
-    expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
-  });
 
-  it("responds with Hello World! (integration style)", async () => {
-    const response = await SELF.fetch("https://example.com");
-    expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ message: "Cursos actualizados" });
   });
 });
