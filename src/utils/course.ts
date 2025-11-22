@@ -12,7 +12,7 @@ const expandModularCourses = async (courses: Course[], careerInfo: Career, env: 
         const modulos = await getModulos(course, env);
         if (modulos.length > 0) {
           modulos.forEach((mod) => {
-            const other = `${careerInfo.careerCode}/${careerInfo.pcaCode}/${mod.mod_numero}/${mod.ddo_correlativo}`;
+            const other = `${careerInfo.code}/${careerInfo.pcaCode}/${mod.mod_numero}/${mod.ddo_correlativo}`;
             newCourses.push(formatModule(course, mod, other));
           });
           indicesToRemove.push(index);
@@ -95,7 +95,7 @@ const getCurrentCareer = async (env: Env) => {
     return b.periodo - a.periodo;
   })[0];
   const career: Career = {
-    careerCode: carrera.crr_codigo,
+    code: carrera.crr_codigo,
     pcaCode: carrera.pca_codigo,
     admissionYear: carrera.alc_ano_ingreso,
     admissionSemester: carrera.alc_periodo,

@@ -1,5 +1,5 @@
 export interface Career {
-  careerCode: number;
+  code: number;
   pcaCode: number;
   admissionYear: number;
   admissionSemester: number;

@@ -6,6 +6,6 @@ export interface Course {
   semester: number;
   modular: boolean;
   other?: string;
-  marksCount: number;
-  totalMarksCount: number;
+  marksCount?: number;
+  totalMarksCount?: number;
 }

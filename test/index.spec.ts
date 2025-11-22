@@ -1,5 +1,5 @@
 import worker from "@/index";
-import { createExecutionContext, env, SELF, waitOnExecutionContext } from "cloudflare:test";
+import { createExecutionContext, env, waitOnExecutionContext } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
