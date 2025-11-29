@@ -25,7 +25,7 @@ const checkNewMarks = async (env: Env): Promise<void> => {
     const finalCourses = filterCompletedCourses(courses);
     await env.DATA.put("courses", JSON.stringify(finalCourses));
   } else {
-    console.warn("No new marks found.");
+    console.warn("No new marks found");
   }
 };
 
@@ -51,20 +51,34 @@ export default {
       const url = new URL(request.url);
       switch (url.pathname) {
         case "/":
+          return new Response("UBB Notas Notificaciones", { status: 200 });
+        case "/refresh-courses":
           await refreshCourses(env);
-          return new Response(JSON.stringify({ message: "Cursos actualizados" }), { status: 200 });
+          return new Response(JSON.stringify({ message: "Cursos actualizados" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        case "/check-new-marks":
+          await checkNewMarks(env);
+          return new Response(JSON.stringify({ message: "Revisión de nuevas notas completada" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
         default:
-          return new Response(JSON.stringify({ message: "No encontrado" }), { status: 404 });
+          return new Response("No encontrado", { status: 404 });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      return new Response(JSON.stringify({ message: errorMessage }), { status: 422 });
+      return new Response(JSON.stringify({ message: errorMessage }), {
+        status: 422,
+        headers: { "Content-Type": "application/json" }
+      });
     }
   },
   async scheduled(_, env): Promise<void> {
     try {
       if (env.SKIP_REFRESH_ON_SCHEDULED === "true") {
-        console.warn("Skipping check for new marks.");
+        console.warn("Skipping check for new marks");
         return;
       }
       await checkNewMarks(env);
