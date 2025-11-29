@@ -3,7 +3,13 @@ import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
 import { getAsignaturas } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
-import { expandModularCourses, findAndUpdateNewMarks, formatCourse, getCurrentCareer } from "@/utils/course";
+import {
+  expandModularCourses,
+  filterCompletedCourses,
+  findAndUpdateNewMarks,
+  formatCourse,
+  getCurrentCareer
+} from "@/utils/course";
 import { genPayload } from "@/utils/discord";
 
 const checkNewMarks = async (env: Env) => {
@@ -16,7 +22,8 @@ const checkNewMarks = async (env: Env) => {
   if (newMarkMessages.length > 0) {
     await env.NOTIFICATIONS.send(genPayload("Nuevas notas disponibles", newMarkMessages, SUCCESS_COLOR));
     await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
-    await env.DATA.put("courses", JSON.stringify(courses));
+    const finalCourses = filterCompletedCourses(courses);
+    await env.DATA.put("courses", JSON.stringify(finalCourses));
   }
   return newMarkMessages;
 };
@@ -33,9 +40,7 @@ const refreshCourses = async (env: Env) => {
   await expandModularCourses(courses, careerInfo, env);
   courses.sort((a, b) => b.code - a.code);
   await findAndUpdateNewMarks(courses, env);
-  const finalCourses = courses.filter(
-    (course) => course.totalMarksCount === 0 || course.marksCount !== course.totalMarksCount
-  );
+  const finalCourses = filterCompletedCourses(courses);
   await env.DATA.put("courses", JSON.stringify(finalCourses));
 };
 

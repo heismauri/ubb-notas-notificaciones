@@ -27,6 +27,10 @@ const expandModularCourses = async (courses: Course[], careerInfo: Career, env: 
   return courses;
 };
 
+const filterCompletedCourses = (courses: Course[]): Course[] => {
+  return courses.filter((course) => course.totalMarksCount === 0 || course.marksCount !== course.totalMarksCount);
+};
+
 const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<string[]> => {
   const newMarkMessages: string[] = [];
   await Promise.all(
@@ -113,4 +117,12 @@ const getMarksCount = (marksResponse: Calificaciones): { total: number; current:
   return { total: total.length, current: total.filter((mark) => parseFloat(mark) > 0).length };
 };
 
-export { expandModularCourses, findAndUpdateNewMarks, formatCourse, formatModule, getCurrentCareer, getMarksCount };
+export {
+  expandModularCourses,
+  filterCompletedCourses,
+  findAndUpdateNewMarks,
+  formatCourse,
+  formatModule,
+  getCurrentCareer,
+  getMarksCount
+};
