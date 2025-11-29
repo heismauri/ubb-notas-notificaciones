@@ -2,11 +2,14 @@ export interface Calificaciones {
   calificaciones: Calificacion[];
 }
 
-export interface Calificacion {
+export interface BaseCalificacion {
   nombre: string;
   factor: number;
   nota: string;
-  subcal?: Calificacion[];
+}
+
+export interface Calificacion extends BaseCalificacion {
+  subcal?: BaseCalificacion[];
 }
 
 export interface Asignatura {
