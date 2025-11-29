@@ -6,7 +6,7 @@ const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
 describe("Refresh courses", () => {
   it("responds with a success message", async () => {
-    const request = new IncomingRequest("http://example.com");
+    const request = new IncomingRequest("http://example.com/refresh-courses");
     const ctx = createExecutionContext();
     const response = await worker.fetch(request, env);
     await waitOnExecutionContext(ctx);
