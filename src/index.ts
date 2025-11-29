@@ -24,6 +24,8 @@ const checkNewMarks = async (env: Env) => {
     await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
     const finalCourses = filterCompletedCourses(courses);
     await env.DATA.put("courses", JSON.stringify(finalCourses));
+  } else {
+    console.warn("No new marks found.");
   }
   return newMarkMessages;
 };
