@@ -15,7 +15,8 @@ export default defineConfig([
     rules: {
       "comma-dangle": ["error", "never"],
       "max-len": ["error", { code: 120, ignoreComments: true }],
-      "no-console": ["error", { allow: ["warn", "error"] }]
+      "no-console": ["error", { allow: ["warn", "error"] }],
+      "@typescript-eslint/explicit-function-return-type": "error"
     }
   }
 ]);

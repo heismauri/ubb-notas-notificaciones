@@ -12,7 +12,7 @@ import {
 } from "@/utils/course";
 import { genPayload } from "@/utils/discord";
 
-const checkNewMarks = async (env: Env) => {
+const checkNewMarks = async (env: Env): Promise<void> => {
   const coursesKV = await env.DATA.get("courses");
   const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
   if (courses.length === 0) {
@@ -27,10 +27,9 @@ const checkNewMarks = async (env: Env) => {
   } else {
     console.warn("No new marks found.");
   }
-  return newMarkMessages;
 };
 
-const refreshCourses = async (env: Env) => {
+const refreshCourses = async (env: Env): Promise<void> => {
   const careerInfo = await getCurrentCareer(env);
   const asignaturas = await getAsignaturas(careerInfo, env);
   if (asignaturas.length === 0) {
@@ -47,7 +46,7 @@ const refreshCourses = async (env: Env) => {
 };
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env): Promise<Response> {
     try {
       const url = new URL(request.url);
       switch (url.pathname) {
@@ -62,7 +61,7 @@ export default {
       return new Response(JSON.stringify({ message: errorMessage }), { status: 422 });
     }
   },
-  async scheduled(_, env) {
+  async scheduled(_, env): Promise<void> {
     try {
       if (env.SKIP_REFRESH_ON_SCHEDULED === "true") {
         console.warn("Skipping check for new marks.");
@@ -75,7 +74,7 @@ export default {
       await sendNtfyNotification("Error al obtener notas", errorMessage, env);
     }
   },
-  async queue(batch, env) {
+  async queue(batch, env): Promise<void> {
     await Promise.all(
       (batch as MessageBatch<DiscordWebhookPayload>).messages.map(async (message) => {
         const result = await sendDiscordNotification(message.body, env);

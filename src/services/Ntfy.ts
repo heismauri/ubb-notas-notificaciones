@@ -1,4 +1,4 @@
-const sendNotification = async (title: string, message: string, env: Env, firstTry = true) => {
+const sendNotification = async (title: string, message: string, env: Env, firstTry = true): Promise<void> => {
   try {
     const response = await fetch(env.NTFY_URL, {
       method: "POST",

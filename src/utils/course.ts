@@ -47,7 +47,7 @@ const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<strin
   return newMarkMessages;
 };
 
-const formatCourse = (asignatura: Asignatura, year: number, semester: number) => {
+const formatCourse = (asignatura: Asignatura, year: number, semester: number): Course => {
   return {
     name: asignatura.agn_nombre,
     code: asignatura.agn_codigo,
@@ -60,7 +60,7 @@ const formatCourse = (asignatura: Asignatura, year: number, semester: number) =>
   };
 };
 
-const formatModule = (course: Course, mod: Modulo, other: string) => {
+const formatModule = (course: Course, mod: Modulo, other: string): Course => {
   return {
     name: `${course.name} - ${mod.mod_nombre}${mod.ddo_correlativo === 2 ? "R" : ""}`,
     code: course.code,
@@ -74,11 +74,11 @@ const formatModule = (course: Course, mod: Modulo, other: string) => {
   };
 };
 
-const getCourseMessage = (course: Course) => {
+const getCourseMessage = (course: Course): string => {
   return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota`;
 };
 
-const getCurrentCareer = async (env: Env) => {
+const getCurrentCareer = async (env: Env): Promise<Career> => {
   const carreras = await getCarreras(env);
   if (carreras.length === 0) {
     throw new Error("No se encontraron carreras");

@@ -1,4 +1,6 @@
-const genPayload = (title: string, messages: string[], color: number) => {
+import { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
+
+const genPayload = (title: string, messages: string[], color: number): DiscordWebhookPayload => {
   return {
     content: null,
     embeds: [

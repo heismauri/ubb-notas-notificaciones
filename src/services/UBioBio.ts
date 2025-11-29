@@ -2,7 +2,7 @@ import type { Career } from "@/types/Career";
 import type { Course } from "@/types/Course";
 import type { Asignatura, Calificaciones, Carrera, Modulo } from "@/types/UBioBioResponses";
 
-const getHeaders = (token: string) => ({
+const getHeaders = (token: string): HeadersInit => ({
   "User-Agent": "YoSoyUBB/48 CFNetwork/3826.600.41 Darwin/24.6.0",
   "Authorization": `Bearer ${token}`,
   "Pragma": "no-cache",
