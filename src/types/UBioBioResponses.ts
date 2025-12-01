@@ -1,5 +1,12 @@
 export interface Calificaciones {
   calificaciones: Calificacion[];
+  resumen: Resumen;
+}
+
+export interface Resumen {
+  examen: string;
+  parcial: string;
+  final: string;
 }
 
 export interface BaseCalificacion {
