@@ -110,11 +110,17 @@ const getCurrentCareer = async (env: Env): Promise<Career> => {
 };
 
 const getMarksCount = (marksResponse: Calificaciones): { total: number; current: number } => {
-  const total = marksResponse.calificaciones.flatMap((calificacion) => {
+  const allMarks = marksResponse.calificaciones.flatMap((calificacion) => {
     const subgrades = calificacion.subcal || [];
     return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)];
   });
-  return { total: total.length, current: total.filter((mark) => parseFloat(mark) > 0).length };
+
+  const partialMark = parseFloat(marksResponse.resumen.parcial);
+  const hasPassed = isNaN(partialMark) || partialMark >= 4.0;
+  if (!hasPassed) {
+    allMarks.push(marksResponse.resumen.examen);
+  }
+  return { total: allMarks.length, current: allMarks.filter((mark) => parseFloat(mark) > 0).length };
 };
 
 export {
