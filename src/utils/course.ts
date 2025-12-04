@@ -3,6 +3,8 @@ import { Career } from "@/types/Career";
 import { Course } from "@/types/Course";
 import { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
 
+const EMPTY_MARK = 0.0;
+
 const expandModularCourses = async (courses: Course[], careerInfo: Career, env: Env): Promise<Course[]> => {
   const indicesToRemove: number[] = [];
   await Promise.all(
@@ -112,15 +114,23 @@ const getCurrentCareer = async (env: Env): Promise<Career> => {
 const getMarksCount = (marksResponse: Calificaciones): { total: number; current: number } => {
   const allMarks = marksResponse.calificaciones.flatMap((calificacion) => {
     const subgrades = calificacion.subcal || [];
-    return [calificacion.nota, ...subgrades.map((subcal) => subcal.nota)];
+    if (subgrades.length === 0) {
+      return [{ value: parseFloat(calificacion.nota) || EMPTY_MARK, weight: calificacion.factor }];
+    }
+    return subgrades.map((subcal) => ({
+      value: parseFloat(subcal.nota) || EMPTY_MARK,
+      weight: (subcal.factor / 100) * calificacion.factor
+    }));
   });
 
-  const partialMark = parseFloat(marksResponse.resumen.parcial);
-  const hasPassed = isNaN(partialMark) || partialMark >= 4.0;
-  if (!hasPassed) {
-    allMarks.push(marksResponse.resumen.examen);
+  const shouldExcludeExam =
+    allMarks.some((mark) => mark.value === EMPTY_MARK) ||
+    Math.round(allMarks.reduce((acc, mark) => acc + mark.value * (mark.weight / 100), 0) * 10) / 10 >= 4.0;
+  if (!shouldExcludeExam) {
+    allMarks.push({ value: parseFloat(marksResponse.resumen.examen) || EMPTY_MARK, weight: 0 });
   }
-  return { total: allMarks.length, current: allMarks.filter((mark) => parseFloat(mark) > 0).length };
+
+  return { total: allMarks.length, current: allMarks.filter((mark) => mark.value !== EMPTY_MARK).length };
 };
 
 export {
