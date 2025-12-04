@@ -1,0 +1,8 @@
+{
+  "calificaciones": [
+    { "nombre": "CERTAMEN", "factor": 30, "nota": "6.0", "subcal": [] },
+    { "nombre": "CERTAMEN", "factor": 35, "nota": "6.0", "subcal": [] },
+    { "nombre": "CERTAMEN", "factor": 35, "nota": "6.0", "subcal": [] }
+  ],
+  "resumen": { "examen": "-", "parcial": "6.0", "final": "6.0" }
+}

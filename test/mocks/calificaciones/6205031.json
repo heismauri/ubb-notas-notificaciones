@@ -1,0 +1,25 @@
+{
+  "calificaciones": [
+    {
+      "nombre": "Promedio Test",
+      "factor": 25,
+      "nota": "",
+      "subcal": [
+        { "nombre": "Test", "factor": 50, "nota": "6.0" },
+        { "nombre": "Test", "factor": 50, "nota": "-" }
+      ]
+    },
+    {
+      "nombre": "Promedio Trabajos",
+      "factor": 25,
+      "nota": "",
+      "subcal": [
+        { "nombre": "Trabajo", "factor": 50, "nota": "-" },
+        { "nombre": "Trabajo", "factor": 50, "nota": "-" }
+      ]
+    },
+    { "nombre": "Evaluacion 1", "factor": 25, "nota": "6.0", "subcal": [] },
+    { "nombre": "Evaluacion 2", "factor": 25, "nota": "-", "subcal": [] }
+  ],
+  "resumen": { "examen": "-", "examen_rep": "-", "correccion": "-", "parcial": "-", "final": "-" }
+}

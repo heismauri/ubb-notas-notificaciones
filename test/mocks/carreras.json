@@ -1,0 +1,16 @@
+[
+  {
+    "crr_nombre": "INGENIERÍA DE EJECUCIÓN EN COMPUTACIÓN E INFORMÁTICA",
+    "pca_codigo": 2,
+    "crr_codigo": 29370,
+    "alc_ano_ingreso": 2025,
+    "alc_periodo": 1,
+    "cmp_codigo": 1,
+    "smp_codigo": 1,
+    "situacion": "REGULAR",
+    "ano_periodo": [
+      { "ano": 2025, "periodo": 2 },
+      { "ano": 2025, "periodo": 1 }
+    ]
+  }
+]
