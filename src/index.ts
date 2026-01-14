@@ -3,13 +3,7 @@ import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
 import { getAsignaturas } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
-import {
-  expandModularCourses,
-  filterCompletedCourses,
-  findAndUpdateNewMarks,
-  formatCourse,
-  getCurrentCareer
-} from "@/utils/course";
+import { filterCompletedCourses, findAndUpdateNewMarks, getCourses, getCurrentCareer } from "@/utils/course";
 import { genPayload } from "@/utils/discord";
 
 const checkNewMarks = async (env: Env): Promise<void> => {
@@ -35,14 +29,8 @@ const refreshCourses = async (env: Env): Promise<void> => {
   if (asignaturas.length === 0) {
     throw new Error("No se encontraron cursos");
   }
-  const courses: Course[] = asignaturas.map((a) => {
-    return formatCourse(a, careerInfo.year, careerInfo.semester);
-  });
-  await expandModularCourses(courses, careerInfo, env);
-  courses.sort((a, b) => b.code - a.code);
-  await findAndUpdateNewMarks(courses, env);
-  const finalCourses = filterCompletedCourses(courses);
-  await env.DATA.put("courses", JSON.stringify(finalCourses));
+  const courses = await getCourses(asignaturas, careerInfo, env);
+  await env.DATA.put("courses", JSON.stringify(courses));
 };
 
 export default {

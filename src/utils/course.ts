@@ -5,30 +5,6 @@ import { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
 
 const EMPTY_MARK = 0.0;
 
-const expandModularCourses = async (courses: Course[], careerInfo: Career, env: Env): Promise<Course[]> => {
-  const indicesToRemove: number[] = [];
-  await Promise.all(
-    courses.map(async (course, index) => {
-      if (course.modular) {
-        const newCourses: Course[] = [];
-        const modulos = await getModulos(course, env);
-        if (modulos.length > 0) {
-          modulos.forEach((mod) => {
-            const other = `${careerInfo.code}/${careerInfo.pcaCode}/${mod.mod_numero}/${mod.ddo_correlativo}`;
-            newCourses.push(formatModule(course, mod, other));
-          });
-          indicesToRemove.push(index);
-          newCourses.forEach((nc) => courses.push(nc));
-        } else {
-          throw new Error(`No se encontraron módulos para la asignatura modular: ${course.name}`);
-        }
-      }
-    })
-  );
-  indicesToRemove.sort((a, b) => b - a).forEach((index) => courses.splice(index, 1));
-  return courses;
-};
-
 const filterCompletedCourses = (courses: Course[]): Course[] => {
   return courses.filter((course) => course.totalMarksCount === 0 || course.marksCount !== course.totalMarksCount);
 };
@@ -49,17 +25,31 @@ const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<strin
   return newMarkMessages;
 };
 
-const formatCourse = (asignatura: Asignatura, year: number, semester: number): Course => {
-  return {
+const formatCourse = async (asignatura: Asignatura, careerInfo: Career, env: Env): Promise<Course[]> => {
+  const mainCourse = {
     name: asignatura.agn_nombre,
     code: asignatura.agn_codigo,
     section: asignatura.mla_sec_numero,
-    year,
-    semester,
+    year: careerInfo.year,
+    semester: careerInfo.semester,
     modular: asignatura.sec_ind_modular !== 0,
     marksCount: 0,
     totalMarksCount: 0
   };
+  if (mainCourse.modular) {
+    const modCourses: Course[] = [];
+    const modulos = await getModulos(mainCourse, env);
+    if (modulos.length <= 0) {
+      throw new Error(`No se encontraron módulos para la asignatura modular: ${mainCourse.name}`);
+    }
+
+    modulos.forEach((mod) => {
+      const other = `${careerInfo.code}/${careerInfo.pcaCode}/${mod.mod_numero}/${mod.ddo_correlativo}`;
+      modCourses.push(formatModule(mainCourse, mod, other));
+    });
+    return modCourses;
+  }
+  return [mainCourse];
 };
 
 const formatModule = (course: Course, mod: Modulo, other: string): Course => {
@@ -74,6 +64,20 @@ const formatModule = (course: Course, mod: Modulo, other: string): Course => {
     marksCount: 0,
     totalMarksCount: 0
   };
+};
+
+const getCourses = async (asignaturas: Asignatura[], careerInfo: Career, env: Env): Promise<Course[]> => {
+  const courses: Course[] = [];
+  await Promise.all(
+    asignaturas.map(async (asignatura) => {
+      const formattedCourses = await formatCourse(asignatura, careerInfo, env);
+      courses.push(...formattedCourses);
+    })
+  );
+  courses.sort((a, b) => b.code - a.code);
+  await findAndUpdateNewMarks(courses, env);
+  const finalCourses = filterCompletedCourses(courses);
+  return finalCourses;
 };
 
 const getCourseMessage = (course: Course): string => {
@@ -133,12 +137,4 @@ const getMarksCount = (marksResponse: Calificaciones): { total: number; current:
   return { total: allMarks.length, current: allMarks.filter((mark) => mark.value !== EMPTY_MARK).length };
 };
 
-export {
-  expandModularCourses,
-  filterCompletedCourses,
-  findAndUpdateNewMarks,
-  formatCourse,
-  formatModule,
-  getCurrentCareer,
-  getMarksCount
-};
+export { filterCompletedCourses, findAndUpdateNewMarks, getCourses, getCurrentCareer, getMarksCount };
