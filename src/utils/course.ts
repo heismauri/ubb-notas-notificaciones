@@ -3,7 +3,7 @@ import { Career } from "@/types/Career";
 import { Course } from "@/types/Course";
 import { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
 
-const EMPTY_MARK = 0.0;
+const EMPTY_MARK = 0;
 
 const filterCompletedCourses = (courses: Course[]): Course[] => {
   return courses.filter((course) => course.totalMarksCount === 0 || course.marksCount !== course.totalMarksCount);
@@ -115,6 +115,11 @@ const getCurrentCareer = async (env: Env): Promise<Career> => {
   return career;
 };
 
+const roundUp = (num: number, decimals = 1): number => {
+  const factor = Math.pow(10, decimals);
+  return Math.round(num * factor) / factor;
+};
+
 const getMarksCount = (marksResponse: Calificaciones): { total: number; current: number } => {
   const allMarks = marksResponse.calificaciones.flatMap((calificacion) => {
     const subgrades = calificacion.subcal || [];
@@ -129,7 +134,7 @@ const getMarksCount = (marksResponse: Calificaciones): { total: number; current:
 
   const shouldExcludeExam =
     allMarks.some((mark) => mark.value === EMPTY_MARK) ||
-    Math.round(allMarks.reduce((acc, mark) => acc + mark.value * (mark.weight / 100), 0) * 10) / 10 >= 4.0;
+    roundUp(allMarks.reduce((acc, mark) => acc + mark.value * (mark.weight / 100), 0)) >= 4;
   if (!shouldExcludeExam) {
     allMarks.push({ value: parseFloat(marksResponse.resumen.examen) || EMPTY_MARK, weight: 0 });
   }
