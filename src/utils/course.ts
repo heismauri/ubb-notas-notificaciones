@@ -1,4 +1,4 @@
-import { getCalificaciones, getCarreras, getModulos } from "@/services/UBioBio";
+import { getAsignaturas, getCalificaciones, getCarreras, getModulos } from "@/services/UBioBio";
 import { Career } from "@/types/Career";
 import { Course } from "@/types/Course";
 import { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
@@ -13,7 +13,7 @@ const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<strin
   const newMarkMessages: string[] = [];
   await Promise.all(
     courses.map(async (course, index) => {
-      const calificaciones = await getCalificaciones(course, env);
+      const calificaciones = await getCalificaciones(course, env.RUN, env);
       const { total, current } = getMarksCount(calificaciones);
       if ((course.marksCount || 0) < current) {
         courses[index].marksCount = current;
@@ -38,7 +38,7 @@ const formatCourse = async (asignatura: Asignatura, careerInfo: Career, env: Env
   };
   if (mainCourse.modular) {
     const modCourses: Course[] = [];
-    const modulos = await getModulos(mainCourse, env);
+    const modulos = await getModulos(mainCourse, env.RUN, env);
     if (modulos.length <= 0) {
       throw new Error(`No se encontraron módulos para la asignatura modular: ${mainCourse.name}`);
     }
@@ -66,7 +66,11 @@ const formatModule = (course: Course, mod: Modulo, other: string): Course => {
   };
 };
 
-const getCourses = async (asignaturas: Asignatura[], careerInfo: Career, env: Env): Promise<Course[]> => {
+const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
+  const asignaturas = await getAsignaturas(careerInfo, env.RUN, env);
+  if (asignaturas.length === 0) {
+    throw new Error("No se encontraron cursos");
+  }
   const courses: Course[] = [];
   await Promise.all(
     asignaturas.map(async (asignatura) => {
@@ -85,7 +89,7 @@ const getCourseMessage = (course: Course): string => {
 };
 
 const getCurrentCareer = async (env: Env): Promise<Career> => {
-  const carreras = await getCarreras(env);
+  const carreras = await getCarreras(env.RUN, env);
   if (carreras.length === 0) {
     throw new Error("No se encontraron carreras");
   }
