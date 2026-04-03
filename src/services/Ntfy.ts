@@ -3,7 +3,8 @@ const sendNotification = async (title: string, message: string, env: Env, firstT
     const response = await fetch(env.NTFY_URL, {
       method: "POST",
       headers: {
-        Title: title
+        Title: title,
+        Authorization: `Basic ${env.NTFY_BASIC_AUTH}`
       },
       body: message.replace(/\*\*/g, "")
     });
