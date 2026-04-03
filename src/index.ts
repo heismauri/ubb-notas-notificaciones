@@ -1,6 +1,5 @@
 import { ERROR_COLOR, sendNotification as sendDiscordNotification, SUCCESS_COLOR } from "@/services/Discord";
 import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
-import { getAsignaturas } from "@/services/UBioBio";
 import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
 import { filterCompletedCourses, findAndUpdateNewMarks, getCourses, getCurrentCareer } from "@/utils/course";
@@ -25,11 +24,7 @@ const checkNewMarks = async (env: Env): Promise<void> => {
 
 const refreshCourses = async (env: Env): Promise<void> => {
   const careerInfo = await getCurrentCareer(env);
-  const asignaturas = await getAsignaturas(careerInfo, env);
-  if (asignaturas.length === 0) {
-    throw new Error("No se encontraron cursos");
-  }
-  const courses = await getCourses(asignaturas, careerInfo, env);
+  const courses = await getCourses(careerInfo, env);
   await env.DATA.put("courses", JSON.stringify(courses));
 };
 
