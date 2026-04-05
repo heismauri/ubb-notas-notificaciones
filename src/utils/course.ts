@@ -9,11 +9,24 @@ const filterCompletedCourses = (courses: Course[]): Course[] => {
   return courses.filter((course) => course.totalMarksCount === 0 || course.marksCount !== course.totalMarksCount);
 };
 
+const normalizeCourseList = (courses: Course[]): Course[] => {
+  courses.sort((a, b) => b.code - a.code);
+  courses.forEach((course) => {
+    if (courses.some((c) => c.code === course.code && c.section !== course.section)) {
+      course.name = `${course.name} - (SECCIÓN ${course.section})`;
+    }
+  });
+  const uniqueCourses = courses.filter(
+    (course, idx, arr) => arr.findIndex((c) => c.code === course.code && c.section === course.section) === idx
+  );
+  return uniqueCourses;
+};
+
 const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<string[]> => {
   const newMarkMessages: string[] = [];
   await Promise.all(
     courses.map(async (course, index) => {
-      const calificaciones = await getCalificaciones(course, env.RUN, env);
+      const calificaciones = await getCalificaciones(course, env);
       const { total, current } = getMarksCount(calificaciones);
       if ((course.marksCount || 0) < current) {
         courses[index].marksCount = current;
@@ -67,20 +80,25 @@ const formatModule = (course: Course, mod: Modulo, other: string): Course => {
 };
 
 const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
-  const asignaturas = await getAsignaturas(careerInfo, env.RUN, env);
-  if (asignaturas.length === 0) {
-    throw new Error("No se encontraron cursos");
-  }
+  const runs = [env.RUN, ...env.RUNS.split(",").map((run) => run.trim())];
   const courses: Course[] = [];
   await Promise.all(
-    asignaturas.map(async (asignatura) => {
-      const formattedCourses = await formatCourse(asignatura, careerInfo, env);
-      courses.push(...formattedCourses);
+    runs.map(async (run) => {
+      const asignaturas = await getAsignaturas(careerInfo, run, env);
+      if (asignaturas.length === 0) {
+        throw new Error("No se encontraron cursos");
+      }
+      await Promise.all(
+        asignaturas.map(async (asignatura) => {
+          const formattedCourses = await formatCourse(asignatura, careerInfo, env);
+          courses.push(...formattedCourses.map((course) => ({ ...course, run })));
+        })
+      );
     })
   );
-  courses.sort((a, b) => b.code - a.code);
   await findAndUpdateNewMarks(courses, env);
-  const finalCourses = filterCompletedCourses(courses);
+  const normalizedCourses = normalizeCourseList(courses);
+  const finalCourses = filterCompletedCourses(normalizedCourses);
   return finalCourses;
 };
 

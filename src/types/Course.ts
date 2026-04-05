@@ -8,4 +8,5 @@ export interface Course {
   other?: string;
   marksCount?: number;
   totalMarksCount?: number;
+  run?: string;
 }

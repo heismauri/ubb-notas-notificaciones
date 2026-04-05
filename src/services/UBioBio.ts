@@ -26,9 +26,9 @@ const getAsignaturas = async (career: Career, run: string, env: Env, firstTry = 
   return response.json();
 };
 
-const getCalificaciones = async (course: Course, run: string, env: Env, firstTry = true): Promise<Calificaciones> => {
+const getCalificaciones = async (course: Course, env: Env, firstTry = true): Promise<Calificaciones> => {
   const url =
-    `${env.BASE_URL}/calificaciones/get_calificaciones${course.modular ? "_modular" : ""}/${run}` +
+    `${env.BASE_URL}/calificaciones/get_calificaciones${course.modular ? "_modular" : ""}/${course.run}` +
     `/${course.code}/${course.section}/${course.year}/${course.semester}${course.other ? `/${course.other}` : ""}`;
   const response = await fetch(url, { headers: getHeaders(env.TOKEN) });
   if (response.status === 401) {
@@ -36,7 +36,7 @@ const getCalificaciones = async (course: Course, run: string, env: Env, firstTry
   }
   if (!response.ok) {
     if (firstTry) {
-      return getCalificaciones(course, run, env, false);
+      return getCalificaciones(course, env, false);
     }
     throw new Error("No se pudieron obtener las notas");
   }
