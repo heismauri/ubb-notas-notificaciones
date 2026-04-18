@@ -38,40 +38,42 @@ const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<strin
   return newMarkMessages;
 };
 
-const formatCourse = async (asignatura: Asignatura, careerInfo: Career, env: Env): Promise<Course[]> => {
+const formatCourse = async (asignatura: Asignatura, careerInfo: Career, run: string, env: Env): Promise<Course[]> => {
   const mainCourse = {
     name: asignatura.agn_nombre,
     code: asignatura.agn_codigo,
     section: asignatura.mla_sec_numero,
     year: careerInfo.year,
     semester: careerInfo.semester,
+    run,
     modular: asignatura.sec_ind_modular !== 0,
     marksCount: 0,
     totalMarksCount: 0
   };
   if (mainCourse.modular) {
     const modCourses: Course[] = [];
-    const modulos = await getModulos(mainCourse, env.RUN, env);
+    const modulos = await getModulos(mainCourse, run, env);
     if (modulos.length <= 0) {
       throw new Error(`No se encontraron módulos para la asignatura modular: ${mainCourse.name}`);
     }
 
     modulos.forEach((mod) => {
       const other = `${careerInfo.code}/${careerInfo.pcaCode}/${mod.mod_numero}/${mod.ddo_correlativo}`;
-      modCourses.push(formatModule(mainCourse, mod, other));
+      modCourses.push(formatModule(mainCourse, mod, other, run));
     });
     return modCourses;
   }
   return [mainCourse];
 };
 
-const formatModule = (course: Course, mod: Modulo, other: string): Course => {
+const formatModule = (course: Course, mod: Modulo, other: string, run: string): Course => {
   return {
     name: `${course.name} - ${mod.mod_nombre}${mod.ddo_correlativo === 2 ? "R" : ""}`,
     code: course.code,
     section: course.section,
     year: course.year,
     semester: course.semester,
+    run,
     modular: course.modular,
     other,
     marksCount: 0,
@@ -90,8 +92,8 @@ const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
       }
       await Promise.all(
         asignaturas.map(async (asignatura) => {
-          const formattedCourses = await formatCourse(asignatura, careerInfo, env);
-          courses.push(...formattedCourses.map((course) => ({ ...course, run })));
+          const formattedCourses = await formatCourse(asignatura, careerInfo, run, env);
+          courses.push(...formattedCourses);
         })
       );
     })

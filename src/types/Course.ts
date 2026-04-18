@@ -4,9 +4,9 @@ export interface Course {
   section: number;
   year: number;
   semester: number;
+  run: string;
   modular: boolean;
   other?: string;
   marksCount?: number;
   totalMarksCount?: number;
-  run?: string;
 }
