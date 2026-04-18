@@ -28,7 +28,7 @@ const getAsignaturas = async (career: Career, run: string, env: Env, firstTry = 
 
 const getCalificaciones = async (course: Course, env: Env, firstTry = true): Promise<Calificaciones> => {
   const url =
-    `${env.BASE_URL}/calificaciones/get_calificaciones${course.modular ? "_modular" : ""}/${course.run}` +
+    `${env.BASE_URL}/calificaciones/get_calificaciones${course.modular ? "_modular" : ""}/${course.students[0]}` +
     `/${course.code}/${course.section}/${course.year}/${course.semester}${course.other ? `/${course.other}` : ""}`;
   const response = await fetch(url, { headers: getHeaders(env.TOKEN) });
   if (response.status === 401) {

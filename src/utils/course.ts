@@ -16,9 +16,15 @@ const normalizeCourseList = (courses: Course[]): Course[] => {
       course.name = `${course.name} - (SECCIÓN ${course.section})`;
     }
   });
-  const uniqueCourses = courses.filter(
-    (course, idx, arr) => arr.findIndex((c) => c.code === course.code && c.section === course.section) === idx
-  );
+  const uniqueCourses = courses.reduce((acc, course) => {
+    const existing = acc.find((c) => c.code === course.code && c.section === course.section);
+    if (existing) {
+      existing.students = existing.students ? [...existing.students, ...course.students] : [...course.students];
+    } else {
+      acc.push(course);
+    }
+    return acc;
+  }, [] as Course[]);
   return uniqueCourses;
 };
 
@@ -45,10 +51,10 @@ const formatCourse = async (asignatura: Asignatura, careerInfo: Career, run: str
     section: asignatura.mla_sec_numero,
     year: careerInfo.year,
     semester: careerInfo.semester,
-    run,
     modular: asignatura.sec_ind_modular !== 0,
     marksCount: 0,
-    totalMarksCount: 0
+    totalMarksCount: 0,
+    students: [run]
   };
   if (mainCourse.modular) {
     const modCourses: Course[] = [];
@@ -73,11 +79,11 @@ const formatModule = (course: Course, mod: Modulo, other: string, run: string): 
     section: course.section,
     year: course.year,
     semester: course.semester,
-    run,
     modular: course.modular,
     other,
     marksCount: 0,
-    totalMarksCount: 0
+    totalMarksCount: 0,
+    students: [run]
   };
 };
 
@@ -99,9 +105,9 @@ const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
     })
   );
   await findAndUpdateNewMarks(courses, env);
-  const normalizedCourses = normalizeCourseList(courses);
-  const finalCourses = filterCompletedCourses(normalizedCourses);
-  return finalCourses;
+  const completedCourses = filterCompletedCourses(courses);
+  const normalizedCourses = normalizeCourseList(completedCourses);
+  return normalizedCourses;
 };
 
 const getCourseMessage = (course: Course): string => {
