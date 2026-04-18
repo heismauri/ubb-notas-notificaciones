@@ -23,6 +23,7 @@ afterEach(() => {
 describe("Refresh courses", () => {
   // This test only works the first time it is run, then env.DATA.put fails
   it("responds with a success message", async () => {
+    env.RUNS = "";
     fetchMock
       .get(env.BASE_URL)
       .intercept({ path: `/v2/config/get_carreras/${env.RUN}` })

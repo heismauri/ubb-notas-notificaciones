@@ -80,7 +80,7 @@ const formatModule = (course: Course, mod: Modulo, other: string): Course => {
 };
 
 const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
-  const runs = [env.RUN, ...env.RUNS.split(",").map((run) => run.trim())];
+  const runs = [env.RUN, ...env.RUNS.split(",").map((run) => run.trim())].filter((run) => run);
   const courses: Course[] = [];
   await Promise.all(
     runs.map(async (run) => {
