@@ -8,13 +8,26 @@ import { genPayload } from "@/utils/discord";
 const checkNewMarks = async (env: Env): Promise<void> => {
   const coursesKV = await env.DATA.get("courses");
   const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
+  const discordIds: Record<string, string> = {};
+  try {
+    const studentsKV = await env.DATA.get("students");
+    const students = studentsKV ? JSON.parse(studentsKV) : {};
+    Object.assign(discordIds, students);
+  } catch {
+    console.error("Error loading students from KV, proceeding without user mentions");
+  }
   if (courses.length === 0) {
     throw new Error("No se encontraron cursos");
   }
-  const newMarkMessages = await findAndUpdateNewMarks(courses, env);
+  const newMarkMessages = await findAndUpdateNewMarks(courses, env, discordIds);
   if (newMarkMessages.length > 0) {
     await env.NOTIFICATIONS.send(genPayload("Nuevas notas disponibles", newMarkMessages, SUCCESS_COLOR));
-    await sendNtfyNotification("Nuevas notas disponibles", newMarkMessages.join("\n"), env);
+    await sendNtfyNotification(
+      "Nuevas notas disponibles",
+      // Remove mentions from ntfy message
+      newMarkMessages.map((message) => message.split("\n")[0]).join("\n"),
+      env
+    );
     const finalCourses = filterCompletedCourses(courses);
     await env.DATA.put("courses", JSON.stringify(finalCourses));
   } else {

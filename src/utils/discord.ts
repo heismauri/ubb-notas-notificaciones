@@ -6,7 +6,7 @@ const genPayload = (title: string, messages: string[], color: number): DiscordWe
     embeds: [
       {
         title,
-        description: messages.join("\n"),
+        description: messages.join("\n\n"),
         color
       }
     ]

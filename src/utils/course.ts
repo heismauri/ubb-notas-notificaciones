@@ -28,7 +28,11 @@ const normalizeCourseList = (courses: Course[]): Course[] => {
   return uniqueCourses;
 };
 
-const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<string[]> => {
+const findAndUpdateNewMarks = async (
+  courses: Course[],
+  env: Env,
+  discordIds?: Record<string, string>
+): Promise<string[]> => {
   const newMarkMessages: string[] = [];
   await Promise.all(
     courses.map(async (course, index) => {
@@ -37,7 +41,7 @@ const findAndUpdateNewMarks = async (courses: Course[], env: Env): Promise<strin
       if ((course.marksCount || 0) < current) {
         courses[index].marksCount = current;
         courses[index].totalMarksCount = total;
-        newMarkMessages.push(getCourseMessage(courses[index]));
+        newMarkMessages.push(getCourseMessage(courses[index], discordIds));
       }
     })
   );
@@ -110,8 +114,12 @@ const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
   return normalizedCourses;
 };
 
-const getCourseMessage = (course: Course): string => {
-  return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota`;
+const getCourseMessage = (course: Course, discordIds?: Record<string, string>): string => {
+  const mentions = course.students
+    .map((student) => (discordIds && discordIds[student] ? `<@${discordIds[student]}>` : null))
+    .filter(Boolean)
+    .join(", ");
+  return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota\n— ${mentions}`;
 };
 
 const getCurrentCareer = async (env: Env): Promise<Career> => {
