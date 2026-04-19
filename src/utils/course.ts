@@ -1,6 +1,7 @@
 import { getAsignaturas, getCalificaciones, getCarreras, getModulos } from "@/services/UBioBio";
 import { Career } from "@/types/Career";
 import { Course } from "@/types/Course";
+import { Student } from "@/types/Student";
 import { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
 
 const EMPTY_MARK = 0;
@@ -28,11 +29,7 @@ const normalizeCourseList = (courses: Course[]): Course[] => {
   return uniqueCourses;
 };
 
-const findAndUpdateNewMarks = async (
-  courses: Course[],
-  env: Env,
-  discordIds?: Record<string, string>
-): Promise<string[]> => {
+const findAndUpdateNewMarks = async (courses: Course[], students: Student[], env: Env): Promise<string[]> => {
   const newMarkMessages: string[] = [];
   await Promise.all(
     courses.map(async (course, index) => {
@@ -41,7 +38,7 @@ const findAndUpdateNewMarks = async (
       if ((course.marksCount || 0) < current) {
         courses[index].marksCount = current;
         courses[index].totalMarksCount = total;
-        newMarkMessages.push(getCourseMessage(courses[index], discordIds));
+        newMarkMessages.push(getCourseMessage(courses[index], students));
       }
     })
   );
@@ -91,8 +88,8 @@ const formatModule = (course: Course, mod: Modulo, other: string, run: string): 
   };
 };
 
-const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
-  const runs = [env.RUN, ...env.RUNS.split(",").map((run) => run.trim())].filter((run) => run);
+const getCourses = async (students: Student[], careerInfo: Career, env: Env): Promise<Course[]> => {
+  const runs = students.map((student) => student.run);
   const courses: Course[] = [];
   await Promise.all(
     runs.map(async (run) => {
@@ -108,22 +105,25 @@ const getCourses = async (careerInfo: Career, env: Env): Promise<Course[]> => {
       );
     })
   );
-  await findAndUpdateNewMarks(courses, env);
+  await findAndUpdateNewMarks(courses, students, env);
   const completedCourses = filterCompletedCourses(courses);
   const normalizedCourses = normalizeCourseList(completedCourses);
   return normalizedCourses;
 };
 
-const getCourseMessage = (course: Course, discordIds?: Record<string, string>): string => {
+const getCourseMessage = (course: Course, students?: Student[]): string => {
   const mentions = course.students
-    .map((student) => (discordIds && discordIds[student] ? `<@${discordIds[student]}>` : null))
+    .map((student) => {
+      const studentInfo = students?.find((s) => s.run === student);
+      return studentInfo ? `<@${studentInfo.discordId}>` : null;
+    })
     .filter(Boolean)
     .join(", ");
   return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota\n— ${mentions}`;
 };
 
-const getCurrentCareer = async (env: Env): Promise<Career> => {
-  const carreras = await getCarreras(env.RUN, env);
+const getCurrentCareer = async (student: Student, env: Env): Promise<Career> => {
+  const carreras = await getCarreras(student.run, env);
   if (carreras.length === 0) {
     throw new Error("No se encontraron carreras");
   }
@@ -180,4 +180,13 @@ const getMarksCount = (marksResponse: Calificaciones): { total: number; current:
   return { total: allMarks.length, current: allMarks.filter((mark) => mark.value !== EMPTY_MARK).length };
 };
 
-export { filterCompletedCourses, findAndUpdateNewMarks, getCourses, getCurrentCareer, getMarksCount };
+const retrieveCourses = async (env: Env): Promise<Course[]> => {
+  const coursesKV = await env.DATA.get("courses");
+  const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
+  if (courses.length === 0) {
+    throw new Error("No se encontraron cursos");
+  }
+  return courses;
+};
+
+export { filterCompletedCourses, findAndUpdateNewMarks, getCourses, getCurrentCareer, getMarksCount, retrieveCourses };

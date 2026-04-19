@@ -1,25 +1,20 @@
 import { ERROR_COLOR, sendNotification as sendDiscordNotification, SUCCESS_COLOR } from "@/services/Discord";
 import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
-import type { Course } from "@/types/Course";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
-import { filterCompletedCourses, findAndUpdateNewMarks, getCourses, getCurrentCareer } from "@/utils/course";
+import {
+  filterCompletedCourses,
+  findAndUpdateNewMarks,
+  getCourses,
+  getCurrentCareer,
+  retrieveCourses
+} from "@/utils/course";
 import { genPayload } from "@/utils/discord";
+import { retrieveStudents } from "@/utils/student";
 
 const checkNewMarks = async (env: Env): Promise<void> => {
-  const coursesKV = await env.DATA.get("courses");
-  const courses: Course[] = coursesKV ? JSON.parse(coursesKV) : [];
-  const discordIds: Record<string, string> = {};
-  try {
-    const studentsKV = await env.DATA.get("students");
-    const students = studentsKV ? JSON.parse(studentsKV) : {};
-    Object.assign(discordIds, students);
-  } catch {
-    console.error("Error loading students from KV, proceeding without user mentions");
-  }
-  if (courses.length === 0) {
-    throw new Error("No se encontraron cursos");
-  }
-  const newMarkMessages = await findAndUpdateNewMarks(courses, env, discordIds);
+  const courses = await retrieveCourses(env);
+  const students = await retrieveStudents(env);
+  const newMarkMessages = await findAndUpdateNewMarks(courses, students, env);
   if (newMarkMessages.length > 0) {
     await env.NOTIFICATIONS.send(genPayload("Nuevas notas disponibles", newMarkMessages, SUCCESS_COLOR));
     await sendNtfyNotification(
@@ -36,8 +31,9 @@ const checkNewMarks = async (env: Env): Promise<void> => {
 };
 
 const refreshCourses = async (env: Env): Promise<void> => {
-  const careerInfo = await getCurrentCareer(env);
-  const courses = await getCourses(careerInfo, env);
+  const students = await retrieveStudents(env);
+  const careerInfo = await getCurrentCareer(students[0], env);
+  const courses = await getCourses(students, careerInfo, env);
   await env.DATA.put("courses", JSON.stringify(courses));
 };
 
