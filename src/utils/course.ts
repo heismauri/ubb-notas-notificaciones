@@ -88,19 +88,34 @@ const formatModule = (course: Course, mod: Modulo, other: string, run: string): 
   };
 };
 
-const getCourses = async (students: Student[], careerInfo: Career, env: Env): Promise<Course[]> => {
-  const runs = students.map((student) => student.run);
+const getCourses = async (students: Student[], env: Env): Promise<Course[]> => {
   const courses: Course[] = [];
-  await Promise.all(
-    runs.map(async (run) => {
-      const asignaturas = await getAsignaturas(careerInfo, run, env);
-      if (asignaturas.length === 0) {
-        throw new Error("No se encontraron cursos");
+  const studentsGroupedByCareer = students.reduce(
+    (acc, student) => {
+      if (!acc[student.careerCode]) {
+        acc[student.careerCode] = [];
       }
+      acc[student.careerCode].push(student);
+      return acc;
+    },
+    {} as Record<string, Student[]>
+  );
+  await Promise.all(
+    Object.keys(studentsGroupedByCareer).map(async (careerCode) => {
+      const students = studentsGroupedByCareer[careerCode];
+      const careerInfo = await getCurrentCareer(students[0], env);
       await Promise.all(
-        asignaturas.map(async (asignatura) => {
-          const formattedCourses = await formatCourse(asignatura, careerInfo, run, env);
-          courses.push(...formattedCourses);
+        students.map(async ({ run }) => {
+          const asignaturas = await getAsignaturas(careerInfo, run, env);
+          if (asignaturas.length === 0) {
+            throw new Error("No se encontraron cursos");
+          }
+          await Promise.all(
+            asignaturas.map(async (asignatura) => {
+              const formattedCourses = await formatCourse(asignatura, careerInfo, run, env);
+              courses.push(...formattedCourses);
+            })
+          );
         })
       );
     })
@@ -115,7 +130,7 @@ const getCourseMessage = (course: Course, students?: Student[]): string => {
   const mentions = course.students
     .map((student) => {
       const studentInfo = students?.find((s) => s.run === student);
-      return studentInfo ? `<@${studentInfo.discordId}>` : null;
+      return studentInfo?.discordId ? `<@${studentInfo.discordId}>` : null;
     })
     .filter(Boolean)
     .join(", ");

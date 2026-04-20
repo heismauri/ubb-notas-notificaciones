@@ -1,13 +1,7 @@
 import { ERROR_COLOR, sendNotification as sendDiscordNotification, SUCCESS_COLOR } from "@/services/Discord";
 import { sendNotification as sendNtfyNotification } from "@/services/Ntfy";
 import type { DiscordWebhookPayload } from "@/types/DiscordWebhookPayload";
-import {
-  filterCompletedCourses,
-  findAndUpdateNewMarks,
-  getCourses,
-  getCurrentCareer,
-  retrieveCourses
-} from "@/utils/course";
+import { filterCompletedCourses, findAndUpdateNewMarks, getCourses, retrieveCourses } from "@/utils/course";
 import { genPayload } from "@/utils/discord";
 import { retrieveStudents } from "@/utils/student";
 
@@ -32,8 +26,7 @@ const checkNewMarks = async (env: Env): Promise<void> => {
 
 const refreshCourses = async (env: Env): Promise<void> => {
   const students = await retrieveStudents(env);
-  const careerInfo = await getCurrentCareer(students[0], env);
-  const courses = await getCourses(students, careerInfo, env);
+  const courses = await getCourses(students, env);
   await env.DATA.put("courses", JSON.stringify(courses));
 };
 
