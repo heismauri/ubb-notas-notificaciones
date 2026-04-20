@@ -1,7 +1,7 @@
 import { getAsignaturas, getCalificaciones, getCarreras, getModulos } from "@/services/UBioBio";
 import { Career } from "@/types/Career";
 import { Course } from "@/types/Course";
-import { Student } from "@/types/Student";
+import { Student, StudentWithCareer } from "@/types/Student";
 import { Asignatura, Calificaciones, Modulo } from "@/types/UBioBioResponses";
 
 const EMPTY_MARK = 0;
@@ -90,29 +90,34 @@ const formatModule = (course: Course, mod: Modulo, other: string, run: string): 
 
 const getCourses = async (students: Student[], env: Env): Promise<Course[]> => {
   const courses: Course[] = [];
-  const studentsGroupedByCareer = students.reduce(
+  const studentsWithCareer = await Promise.all(
+    (students as StudentWithCareer[]).map(async (student) => {
+      const careerInfo = await getCurrentCareer(student, env);
+      student.career = careerInfo;
+      return student;
+    })
+  );
+  const studentsGroupedByCareer = studentsWithCareer.reduce(
     (acc, student) => {
-      if (!acc[student.careerCode]) {
-        acc[student.careerCode] = [];
+      if (!acc[student.career.code]) {
+        acc[student.career.code] = [];
       }
-      acc[student.careerCode].push(student);
+      acc[student.career.code].push(student);
       return acc;
     },
-    {} as Record<string, Student[]>
+    {} as Record<string, StudentWithCareer[]>
   );
   await Promise.all(
-    Object.keys(studentsGroupedByCareer).map(async (careerCode) => {
-      const students = studentsGroupedByCareer[careerCode];
-      const careerInfo = await getCurrentCareer(students[0], env);
+    Object.values(studentsGroupedByCareer).map(async (students) => {
       await Promise.all(
-        students.map(async ({ run }) => {
-          const asignaturas = await getAsignaturas(careerInfo, run, env);
+        students.map(async ({ run, career }) => {
+          const asignaturas = await getAsignaturas(career, run, env);
           if (asignaturas.length === 0) {
             throw new Error("No se encontraron cursos");
           }
           await Promise.all(
             asignaturas.map(async (asignatura) => {
-              const formattedCourses = await formatCourse(asignatura, careerInfo, run, env);
+              const formattedCourses = await formatCourse(asignatura, career, run, env);
               courses.push(...formattedCourses);
             })
           );
