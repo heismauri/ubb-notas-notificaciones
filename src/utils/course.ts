@@ -39,6 +39,13 @@ const findAndUpdateNewMarks = async (courses: Course[], students: Student[], env
         courses[index].marksCount = current;
         courses[index].totalMarksCount = total;
         newMarkMessages.push(getCourseMessage(courses[index], students));
+        return;
+      }
+
+      if ((course.totalMarksCount || 0) < total) {
+        courses[index].totalMarksCount = total;
+        newMarkMessages.push(getCourseUpdatingMessage(courses[index], students));
+        return;
       }
     })
   );
@@ -137,9 +144,24 @@ const getCourseMessage = (course: Course, students?: Student[]): string => {
       const studentInfo = students?.find((s) => s.run === student);
       return studentInfo?.discordId ? `<@${studentInfo.discordId}>` : null;
     })
-    .filter(Boolean)
-    .join(", ");
-  return `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota\n— ${mentions}`;
+    .filter(Boolean);
+  return (
+    `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota` +
+    `${mentions.length > 0 ? `\n— ${mentions.join(", ")}` : ""}`
+  );
+};
+
+const getCourseUpdatingMessage = (course: Course, students?: Student[]): string => {
+  const mentions = course.students
+    .map((student) => {
+      const studentInfo = students?.find((s) => s.run === student);
+      return studentInfo?.discordId ? `<@${studentInfo.discordId}>` : null;
+    })
+    .filter(Boolean);
+  return (
+    `La asignatura **"${course.name}"** (${course.code}-${course.section}) está actualizando sus notas` +
+    `${mentions.length > 0 ? `\n— ${mentions.join(", ")}` : ""}`
+  );
 };
 
 const getCurrentCareer = async (student: Student, env: Env): Promise<Career> => {
