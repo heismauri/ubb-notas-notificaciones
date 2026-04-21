@@ -29,8 +29,12 @@ const normalizeCourseList = (courses: Course[]): Course[] => {
   return uniqueCourses;
 };
 
-const findAndUpdateNewMarks = async (courses: Course[], students: Student[], env: Env): Promise<string[]> => {
-  const newMarkMessages: string[] = [];
+const findAndUpdateNewMarks = async (
+  courses: Course[],
+  students: Student[],
+  env: Env
+): Promise<{ title: string; message: string }[]> => {
+  const newMarkMessages: { title: string; message: string }[] = [];
   await Promise.all(
     courses.map(async (course, index) => {
       const calificaciones = await getCalificaciones(course, env);
@@ -138,30 +142,34 @@ const getCourses = async (students: Student[], env: Env): Promise<Course[]> => {
   return normalizedCourses;
 };
 
-const getCourseMessage = (course: Course, students?: Student[]): string => {
+const getCourseMessage = (course: Course, students?: Student[]): { title: string; message: string } => {
   const mentions = course.students
     .map((student) => {
       const studentInfo = students?.find((s) => s.run === student);
       return studentInfo?.discordId ? `<@${studentInfo.discordId}>` : null;
     })
     .filter(Boolean);
-  return (
-    `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota` +
-    `${mentions.length > 0 ? `\n— ${mentions.join(", ")}` : ""}`
-  );
+  return {
+    title: "Nueva nota disponible",
+    message:
+      `La asignatura **"${course.name}"** (${course.code}-${course.section}) subió una nueva nota` +
+      `${mentions.length > 0 ? `\n— ${mentions.join(", ")}` : ""}`
+  };
 };
 
-const getCourseUpdatingMessage = (course: Course, students?: Student[]): string => {
+const getCourseUpdatingMessage = (course: Course, students?: Student[]): { title: string; message: string } => {
   const mentions = course.students
     .map((student) => {
       const studentInfo = students?.find((s) => s.run === student);
       return studentInfo?.discordId ? `<@${studentInfo.discordId}>` : null;
     })
     .filter(Boolean);
-  return (
-    `La asignatura **"${course.name}"** (${course.code}-${course.section}) está actualizando sus notas` +
-    `${mentions.length > 0 ? `\n— ${mentions.join(", ")}` : ""}`
-  );
+  return {
+    title: "Pronto a subir notas",
+    message:
+      `La asignatura **"${course.name}"** (${course.code}-${course.section}) está actualizando sus notas` +
+      `${mentions.length > 0 ? `\n— ${mentions.join(", ")}` : ""}`
+  };
 };
 
 const getCurrentCareer = async (student: Student, env: Env): Promise<Career> => {

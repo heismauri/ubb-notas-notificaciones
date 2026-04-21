@@ -10,12 +10,21 @@ const checkNewMarks = async (env: Env): Promise<void> => {
   const students = await retrieveStudents(env);
   const newMarkMessages = await findAndUpdateNewMarks(courses, students, env);
   if (newMarkMessages.length > 0) {
-    await env.NOTIFICATIONS.send(genPayload("Nuevas notas disponibles", newMarkMessages, SUCCESS_COLOR));
-    await sendNtfyNotification(
-      "Nuevas notas disponibles",
-      // Remove mentions from ntfy message
-      newMarkMessages.map((message) => message.split("\n")[0]).join("\n"),
-      env
+    const groupedMessages = newMarkMessages.reduce(
+      (acc, { title, message }) => {
+        if (!acc[title]) {
+          acc[title] = [];
+        }
+        acc[title].push(message);
+        return acc;
+      },
+      {} as Record<string, string[]>
+    );
+    await Promise.all(
+      Object.entries(groupedMessages).map(([title, messages]) => {
+        env.NOTIFICATIONS.send(genPayload(title, messages, SUCCESS_COLOR));
+        sendNtfyNotification(title, messages.join("\n"), env);
+      })
     );
     const finalCourses = filterCompletedCourses(courses);
     await env.DATA.put("courses", JSON.stringify(finalCourses));
