@@ -21,9 +21,9 @@ const checkNewMarks = async (env: Env): Promise<void> => {
       {} as Record<string, string[]>
     );
     await Promise.all(
-      Object.entries(groupedMessages).map(([title, messages]) => {
-        env.NOTIFICATIONS.send(genPayload(title, messages, SUCCESS_COLOR));
-        sendNtfyNotification(title, messages.join("\n"), env);
+      Object.entries(groupedMessages).map(async ([title, messages]) => {
+        await env.NOTIFICATIONS.send(genPayload(title, messages, SUCCESS_COLOR));
+        await sendNtfyNotification(title, messages.join("\n"), env);
       })
     );
     const finalCourses = filterCompletedCourses(courses);
